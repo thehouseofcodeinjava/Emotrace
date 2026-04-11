@@ -65,6 +65,7 @@
 ## NEXT SESSION WORK QUEUE
 
 ### High Priority (Week 2/3 — Rajat Mahajan)
+- [ ] ⚠️ REVIEW REQUIRED: lib/config/theme.dart, constants.dart, routes.dart were missing from your commit. Piyush recreated them from context. Open each file, verify the values match your original intent (colours, emotion list, mood labels, emojis), and fix anything incorrect BEFORE building HomeScreen or MoodEntryScreen — Rajat Mahajan
 - [ ] Wire DatabaseService.init() in main.dart before runApp — Rajat Mahajan
 - [ ] Build full HomeScreen dashboard: greeting, today's mood card, streak, recent entries, FAB — Rajat Mahajan
 - [ ] Build full MoodEntryScreen: MoodScaleWidget + EmotionTagSelector + notes + save — Rajat Mahajan
