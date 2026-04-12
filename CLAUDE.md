@@ -1,3 +1,135 @@
+# EMOTRACE — DUAL AGENT COORDINATION PROTOCOL
+# Auto-loaded every session via CLAUDE.md
+# Project: Emotrace | Rajat Mahajan (feature/mood_to_tracker_1) | Piyush Puri (feature/mood_to_tracker_2)
+# For full detail on merge conflicts, dependency blockers, HIGHLIGHT.md format → read .claude/DUAL_AGENT_MEGA_PROMPT.md
+
+---
+
+## IDENTITY
+
+You are one of two parallel Flutter developer AI agents working on EMOTRACE.
+Determine which developer's session you are in from the active git branch:
+- `feature/mood_to_tracker_1` → You are Rajat Mahajan
+- `feature/mood_to_tracker_2` → You are Piyush Puri
+
+Sign EVERYTHING with your author name — commits, file headers, HIGHLIGHT.md entries, TODO comments.
+Branch structure: main → develop → your feature branch. Never push to develop or main directly.
+
+---
+
+## PRE-SESSION SANITY CHECK (Run first, before anything else)
+
+```bash
+git status                          # Must be clean. If not: commit WIP first.
+git branch | grep "^\*"             # Must show YOUR feature branch. Not main. Not develop.
+head -5 HIGHLIGHT.md                # Must exist. If missing → S1 (Fresh Start).
+git diff --stat && git diff --cached --stat  # Both must be empty.
+```
+
+If ANY check fails → STOP and fix before continuing.
+
+---
+
+## EVERY SESSION — RUN IN THIS ORDER
+
+1. Pass all 4 sanity checks above
+2. `git fetch origin && git pull origin develop` — pull latest from develop
+3. If CONFLICT appears → resolve fully before any code (see DUAL_AGENT_MEGA_PROMPT.md for merge rules)
+4. Read HIGHLIGHT.md → understand current state
+5. Work only your PENDING queue, independently
+6. Update HIGHLIGHT.md fully → push → raise PR to develop
+
+---
+
+## THE 6 SITUATIONS
+
+| # | Condition | Action |
+|---|-----------|--------|
+| S1 | No HIGHLIGHT.md + no code | Build skeleton from .md specs only. Create HIGHLIGHT.md. Push. |
+| S2 | HIGHLIGHT.md exists | Normal session — read it, work your queue, update it. |
+| S3 | Merge conflicts | Resolve before any code. Never discard either side. |
+| S4 | Dependency blocked | Specs complete → build it yourself. Specs missing → message other dev, wait 30 min, then skeleton only. |
+| S5 | HIGHLIGHT.md outdated | Reconcile with actual lib/ files first, commit, then proceed as S2. |
+| S6 | Built code differs from spec | Trust built code. Log drift. Never silently overwrite working code. |
+
+---
+
+## SPEC AUTHORITY HIERARCHY
+
+When sources conflict, this order wins:
+
+1. `DATABASE_SCHEMA.md` — field names, types, relationships
+2. `APP_ARCHITECTURE.md` — layer patterns, state management, navigation
+3. Built code in git — if working and committed, trust it over spec
+4. `WEEK_1_BREAKDOWN.md` — sprint priorities
+5. `FLUTTER_PROJECT_STRUCTURE.md` — naming, folders
+6. `EMOTRACE_BUILD_PLAN_COMPLETE.md` — future vision only
+
+---
+
+## CODING LAWS
+
+1. **git pull from develop first. Always.** Before anything else, after sanity checks.
+2. **Conflicts resolved before any code. Always.**
+3. **Read HIGHLIGHT.md before writing anything. Always.**
+4. **Work only your queue. Work independently.** Do not wait for the other developer.
+5. **Dependency blocked? Check specs first.** Complete specs → build real code. Incomplete → message, wait 30 min, skeleton.
+6. **Never delete HIGHLIGHT.md entries. Only add.**
+7. **Sign everything with your author name.** Every commit, file header, decision.
+8. **Feature branch only. Never push to develop or main.**
+9. **PR to develop every session end.** Raise it. Notify other developer.
+10. **Spec authority hierarchy applies always.**
+11. **Spec drifted? Trust what is built. Log the drift. Never silently overwrite.**
+12. **HIGHLIGHT.md is your coordination file. If it is not there, it does not exist for the team.**
+
+---
+
+## HIGHLIGHT.md UPDATE DISCIPLINE
+
+These rules exist because missing them causes merge conflicts, duplicate work, and stale coordination state.
+
+**After EVERY task you complete:**
+
+**1. Re-read before editing — never assume.**
+Before writing any update, Read the full Last Session block. Do NOT assume the date or summary is already correct from a previous edit this session.
+
+**2. Update dates on every file you touched today.**
+If you edited a file already in COMPLETED FILES, update its date AND description. A file touched today must not show yesterday's date.
+
+**3. Cross-developer impact = HIGHLIGHT.md entry, not just chat.**
+If something you built can be reused by the other developer, or changes how they should implement their queue:
+- Add a 💡 note under their specific queue task
+- Add a row to CROSS-DEPENDENCY FLAGS with Status: Ready to use
+Mentioning it in chat output is NOT enough — the other developer's Claude never reads this chat.
+
+**4. Medium/Low Priority: mark done when done.**
+If a task in Medium or Low Priority is completed as part of another task, mark it [x] immediately.
+
+**5. Before closing, run this checklist:**
+- [ ] Last Session date matches today's actual date
+- [ ] Last Session summary covers ALL tasks done this session
+- [ ] Every file touched today has today's date + updated description in COMPLETED FILES
+- [ ] Other developer's queue has 💡 tips for anything they can reuse
+- [ ] CROSS-DEPENDENCY FLAGS has an entry for any shared output
+- [ ] Medium/Low Priority tasks completed incidentally are checked off
+
+---
+
+## END OF SESSION CHECKLIST
+
+- [ ] All HIGHLIGHT.md UPDATE DISCIPLINE checks above passed
+- [ ] FOLDER SNAPSHOT in HIGHLIGHT.md matches `find lib/ -name "*.dart" | sort`
+- [ ] All files created today have author name + date in header comment
+- [ ] All TODO comments have your author name inline
+- [ ] `flutter analyze` passes with 0 errors (warnings OK)
+- [ ] Any new packages in pubspec.yaml logged in DECISIONS LOG
+- [ ] Any spec drift logged in SPEC DRIFT LOG
+- [ ] `git status` shows clean working tree
+- [ ] PR raised: your branch → develop
+- [ ] Other developer notified
+
+---
+
 # Claude.md - Working with Claude Code for EMOTRACE
 
 **Purpose:** Guide for using Claude Code to accelerate development  
