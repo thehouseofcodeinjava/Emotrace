@@ -1,4 +1,5 @@
 // Screen: InsightsScreen | Author: Piyush Puri | Date: 11 Apr 2026
+// Updated: 12 Apr 2026 — added pull-to-refresh
 // Design reference: design/insights/code.html
 // Features: stability score, 30-day mood trend chart, best/worst day pattern cards, emotion frequency bars.
 
@@ -33,13 +34,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Scaffold(
       body: Consumer2<InsightsProvider, MoodProvider>(
         builder: (context, insightsProvider, moodProvider, _) {
+          final entries = moodProvider.entries;
           final isLoading = insightsProvider.isLoading || moodProvider.isLoading;
 
-          if (isLoading) {
+          // Full-screen spinner only on first load (no data yet)
+          if (isLoading && entries.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final entries = moodProvider.entries;
           final insights = insightsProvider.insights;
 
           // Minimum 3 entries to show any insights
@@ -47,8 +49,17 @@ class _InsightsScreenState extends State<InsightsScreen> {
             return _EmptyInsightsState(entryCount: entries.length);
           }
 
-          return CustomScrollView(
-            slivers: [
+          return RefreshIndicator(
+            onRefresh: () => Future.wait([
+              moodProvider.loadEntries(),
+              insightsProvider.calculateInsights(),
+            ]),
+            color: AppTheme.teal,
+            backgroundColor: AppTheme.cardBackground,
+            child: CustomScrollView(
+              // Required for RefreshIndicator to trigger on short content
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               // ── App bar ──────────────────────────────────────────────────
               SliverAppBar(
                 pinned: true,
@@ -97,6 +108,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 ),
               ),
             ],
+          ),
           );
         },
       ),
@@ -256,7 +268,7 @@ class _PatternCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +315,7 @@ class _EmotionFrequencyBars extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.background,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.outlineVariant.withOpacity(0.15)),
+        border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: entries.map((entry) {

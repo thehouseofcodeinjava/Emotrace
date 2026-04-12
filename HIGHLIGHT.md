@@ -4,10 +4,10 @@
 # UPDATE THIS LAST before every push.
 
 ## Last Session
-- Date: 11 Apr 2026
+- Date: 12 Apr 2026
 - Author: Piyush Puri
 - Branch: feature/mood_to_tracker_2
-- Summary: Session 2 — Created all missing lib/config/ files (theme, constants, routes) which were absent from Rajat's commit. Implemented InsightService algorithms (streak, stability, day-of-week pattern, emotion frequency). Built full CalendarScreen with streak bento grid, month-navigable 90-day heatmap, and trends summary card. Built full InsightsScreen with stability score hero, 30-day fl_chart line chart, pattern bento grid, and emotion frequency bars. Added pubspec.yaml. All Piyush Week 2 tasks complete.
+- Summary: Session 3 — Built full SettingsScreen UI. Upgraded StreakCounter widget to full bento-grid impl and wired into CalendarScreen (removed dead _StreakBentoGrid). Added pull-to-refresh (RefreshIndicator + AlwaysScrollableScrollPhysics) to CalendarScreen and InsightsScreen. flutter analyze: 0 issues across all 3 files.
 
 ---
 
@@ -35,13 +35,13 @@
 | lib/providers/settings_provider.dart | SettingsProvider — theme, reminders, reminderTime | Rajat Mahajan | 11 Apr 2026 |
 | lib/screens/home_screen.dart | HomeScreen shell — loads MoodProvider, placeholder UI | Rajat Mahajan | 11 Apr 2026 |
 | lib/screens/mood_entry_screen.dart | MoodEntryScreen shell — mood score/emoji display, ready for MoodScaleWidget | Rajat Mahajan | 11 Apr 2026 |
-| lib/screens/calendar_screen.dart | CalendarScreen FULL — streak bento grid, 90-day heatmap, month nav, trends card | Piyush Puri | 11 Apr 2026 |
-| lib/screens/insights_screen.dart | InsightsScreen FULL — stability score, 30-day chart, pattern cards, emotion bars | Piyush Puri | 11 Apr 2026 |
-| lib/screens/settings_screen.dart | SettingsScreen shell — reminder toggle wired to SettingsProvider | Rajat Mahajan | 11 Apr 2026 |
+| lib/screens/calendar_screen.dart | CalendarScreen FULL — StreakCounter wired, 90-day heatmap, month nav, trends card, pull-to-refresh | Piyush Puri | 12 Apr 2026 |
+| lib/screens/insights_screen.dart | InsightsScreen FULL — stability score, 30-day chart, pattern cards, emotion bars, pull-to-refresh | Piyush Puri | 12 Apr 2026 |
+| lib/screens/settings_screen.dart | SettingsScreen FULL — Appearance, Notifications (toggle + time picker), Data, About sections | Piyush Puri | 12 Apr 2026 |
 | lib/widgets/mood_scale_widget.dart | MoodScaleWidget — emoji + mood circles, tap-to-select skeleton | Rajat Mahajan | 11 Apr 2026 |
 | lib/widgets/emotion_tag_selector.dart | EmotionTagSelector — FilterChip row from AppConstants.emotions | Rajat Mahajan | 11 Apr 2026 |
 | lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — month nav, color grid, tap-to-view, legend, entry count | Piyush Puri | 11 Apr 2026 |
-| lib/widgets/streak_counter.dart | StreakCounter — currentStreak + longestStreak display | Rajat Mahajan | 11 Apr 2026 |
+| lib/widgets/streak_counter.dart | StreakCounter FULL — bento grid, progress bar, goal display. Wired into CalendarScreen | Piyush Puri | 12 Apr 2026 |
 | lib/widgets/mood_chart.dart | MoodChart FULL — fl_chart line chart, 30-day trend, gradient fill, tooltips | Piyush Puri | 11 Apr 2026 |
 | lib/widgets/bottom_nav_bar.dart | EmotracBottomNavBar — custom nav shell | Rajat Mahajan | 11 Apr 2026 |
 | lib/widgets/mood_entry_card.dart | MoodEntryCard — ListTile with mood color circle, date, emotions | Rajat Mahajan | 11 Apr 2026 |
@@ -68,18 +68,19 @@
 - [ ] ⚠️ REVIEW REQUIRED: lib/config/theme.dart, constants.dart, routes.dart were missing from your commit. Piyush recreated them from context. Open each file, verify the values match your original intent (colours, emotion list, mood labels, emojis), and fix anything incorrect BEFORE building HomeScreen or MoodEntryScreen — Rajat Mahajan
 - [ ] Wire DatabaseService.init() in main.dart before runApp — Rajat Mahajan
 - [ ] Build full HomeScreen dashboard: greeting, today's mood card, streak, recent entries, FAB — Rajat Mahajan
+  - 💡 StreakCounter widget is DONE FULL (Piyush, 12 Apr). Import from lib/widgets/streak_counter.dart and use directly: `StreakCounter(currentStreak: x, longestStreak: y)` — no need to rebuild streak UI
 - [ ] Build full MoodEntryScreen: MoodScaleWidget + EmotionTagSelector + notes + save — Rajat Mahajan
 - [ ] Implement MoodProvider.addMoodEntry with full DatabaseService integration — Rajat Mahajan
 - [ ] Test: save mood entry → appears on home screen — Rajat Mahajan
 
 ### High Priority (Week 3 — Piyush Puri)
-- [ ] Implement SettingsScreen full UI (theme toggle, reminder time picker) — Piyush Puri
-- [ ] Wire StreakCounter widget properly into CalendarScreen (already used, verify display) — Piyush Puri
-- [ ] Add pull-to-refresh on CalendarScreen and InsightsScreen — Piyush Puri
+- [x] Implement SettingsScreen full UI (theme toggle, reminder time picker) — Piyush Puri ✓ 12 Apr 2026
+- [x] Wire StreakCounter widget properly into CalendarScreen — Piyush Puri ✓ 12 Apr 2026
+- [x] Add pull-to-refresh on CalendarScreen and InsightsScreen — Piyush Puri ✓ 12 Apr 2026
 
 ### Medium Priority
 - [ ] NotificationService implementation — Week 5
-- [ ] SettingsScreen reminder time picker — Week 5
+- [x] SettingsScreen reminder time picker — DONE (built in SettingsScreen full UI, Piyush Puri, 12 Apr 2026)
 
 ### Low Priority
 - [ ] PDF export feature
@@ -96,6 +97,7 @@
 | DatabaseService.init() must be called before any service is used — not yet in main.dart | Rajat Mahajan | Rajat Mahajan (next session) | Pending |
 | InsightsProvider.calculateInsights() — InsightService now FULLY implemented; call will return real data once DB has entries | Piyush Puri | — | Resolved |
 | MoodEntryCard imports moodColors from theme.dart — confirmed: moodColors is now top-level const in theme.dart, import path correct | Piyush Puri | — | Resolved |
+| StreakCounter widget is DONE FULL — Rajat can use it directly in HomeScreen. Props: currentStreak (int), longestStreak (int). Import: lib/widgets/streak_counter.dart | Piyush Puri | Rajat Mahajan (info, no blocker) | Ready to use |
 
 ---
 
@@ -129,12 +131,12 @@ lib/
     mood_entry_screen.dart                          SHELL — Rajat Mahajan (Week 3: full impl)
     calendar_screen.dart                            DONE FULL — Piyush Puri
     insights_screen.dart                            DONE FULL — Piyush Puri
-    settings_screen.dart                            SHELL — Rajat Mahajan (Week 5)
+    settings_screen.dart                            DONE FULL — Piyush Puri
   widgets/
     mood_scale_widget.dart                          SHELL — Rajat Mahajan (Week 3)
     emotion_tag_selector.dart                       SHELL — Rajat Mahajan (Week 3)
     calendar_heatmap.dart                           DONE FULL — Piyush Puri
-    streak_counter.dart                             SHELL — Rajat Mahajan
+    streak_counter.dart                             DONE FULL — Piyush Puri
     mood_chart.dart                                 DONE FULL — Piyush Puri
     bottom_nav_bar.dart                             SHELL — Rajat Mahajan
     mood_entry_card.dart                            SHELL — Rajat Mahajan
@@ -155,6 +157,8 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 |---------------|--------|--------|------|
 | feat: initial project skeleton — all lib/ files generated | feature/mood_to_tracker_1 | Rajat Mahajan | 11 Apr 2026 |
 | feat: CalendarScreen + InsightsScreen full impl, config files, InsightService algorithms, pubspec | feature/mood_to_tracker_2 | Piyush Puri | 11 Apr 2026 |
+| feat: SettingsScreen full UI — Appearance, Notifications, Data, About sections | Author: Piyush Puri | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
+| feat: StreakCounter full impl, pull-to-refresh CalendarScreen + InsightsScreen | Author: Piyush Puri | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
 
 ---
 
