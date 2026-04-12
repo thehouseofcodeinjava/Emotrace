@@ -153,12 +153,13 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 
 ## COMMIT HISTORY
 
-| Commit message | Branch | Author | Date |
-|---------------|--------|--------|------|
-| feat: initial project skeleton — all lib/ files generated | feature/mood_to_tracker_1 | Rajat Mahajan | 11 Apr 2026 |
-| feat: CalendarScreen + InsightsScreen full impl, config files, InsightService algorithms, pubspec | feature/mood_to_tracker_2 | Piyush Puri | 11 Apr 2026 |
-| feat: SettingsScreen full UI — Appearance, Notifications, Data, About sections | Author: Piyush Puri | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
-| feat: StreakCounter full impl, pull-to-refresh CalendarScreen + InsightsScreen | Author: Piyush Puri | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
+| Commit | Commit message | Branch | Author | Date |
+|--------|---------------|--------|--------|------|
+| fc09ddd | feat: initial project skeleton — all lib/ files generated | feature/mood_to_tracker_1 | Rajat Mahajan | 11 Apr 2026 |
+| ff042ce | feat: CalendarScreen + InsightsScreen full impl, config files, InsightService algorithms, pubspec | feature/mood_to_tracker_2 | Piyush Puri | 11 Apr 2026 |
+| 439e297 | fix: add explicit config-review task to Rajat's work queue in HIGHLIGHT.md | feature/mood_to_tracker_2 | Piyush Puri | 11 Apr 2026 |
+| 9b6806f | feat: SettingsScreen full UI, StreakCounter full impl, pull-to-refresh CalendarScreen + InsightsScreen | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
+| 65fe1b3 | docs: add dual-agent coordination protocol and mega prompt for Rajat's Claude | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
 
 ---
 
