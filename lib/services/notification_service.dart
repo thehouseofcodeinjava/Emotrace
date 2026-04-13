@@ -85,6 +85,8 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.inexact,
       matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 

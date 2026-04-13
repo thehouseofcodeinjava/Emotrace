@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../config/constants.dart';
 import '../models/mood_entry_model.dart';
 import 'insight_service.dart';
 
