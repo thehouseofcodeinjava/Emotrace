@@ -190,7 +190,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.database_outlined,
+              const Icon(Icons.storage_rounded,
                   size: 14, color: AppTheme.tealLight),
               const SizedBox(width: 6),
               Text(
