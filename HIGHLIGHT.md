@@ -7,7 +7,7 @@
 - Date: 13 Apr 2026
 - Author: Piyush Puri
 - Branch: feature/mood_to_tracker_2
-- Summary: Session 4 — Completed Rajat's full queue (Rajat away). Fixed critical DB init bug in main.dart (DatabaseService.init() was never called). Added currentStreak + longestStreak computed getters to MoodProvider. Built full HomeScreen dashboard (greeting, today's mood card, StreakCounter, recent entries, FAB). Built full MoodEntryScreen (MoodScaleWidget + EmotionTagSelector + notes + save → MoodProvider). Completed all widget shells: MoodScaleWidget (animated emoji + scale + motivational text), EmotionTagSelector (max 5 cap), MoodEntryCard (mood color + relative date + emotions), EmotracBottomNavBar (styled). Fixed pre-existing bug in CalendarHeatmap: Icons.database_outlined → Icons.storage_rounded. flutter analyze: 0 errors (7 pre-existing warnings/infos).
+- Summary: Session 4 — Completed Rajat's full queue (Rajat away). Fixed critical DB init bug in main.dart (DatabaseService.init() was never called). Added currentStreak + longestStreak computed getters to MoodProvider. Built full HomeScreen dashboard (greeting, today's mood card, StreakCounter, recent entries, FAB). Built full MoodEntryScreen (MoodScaleWidget + EmotionTagSelector + notes + save → MoodProvider). Completed all widget shells: MoodScaleWidget (animated emoji + scale + motivational text), EmotionTagSelector (max 5 cap), MoodEntryCard (mood color + relative date + emotions), EmotracBottomNavBar (styled). Fixed pre-existing bug in CalendarHeatmap (Icons.database_outlined → Icons.storage_rounded). Fixed all flutter analyze warnings: removed unused _tempUserId from InsightService, replaced withOpacity() → withValues(alpha:) in CalendarHeatmap x3 and MoodChart x2. flutter analyze: No issues found.
 
 ---
 
@@ -27,7 +27,7 @@
 | lib/services/database_service.dart | SQLite singleton — init, createTables (all 5 tables + indexes), CRUD helpers | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/mood_service.dart | MoodService — saveMoodEntry, getMoodEntries, getTodaysMood, getRecentEntries, delete | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/auth_service.dart | AuthService stub — login/logout/getCurrentUser (Month 2) | Rajat Mahajan | 11 Apr 2026 |
-| lib/services/insight_service.dart | InsightService — FULL algorithms: streak, stability score, day-of-week, emotion freq | Piyush Puri | 11 Apr 2026 |
+| lib/services/insight_service.dart | InsightService — FULL algorithms: streak, stability score, day-of-week, emotion freq; removed unused _tempUserId | Piyush Puri | 13 Apr 2026 |
 | lib/services/notification_service.dart | NotificationService stub — schedule/cancel daily reminder (Week 5) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/mood_provider.dart | MoodProvider — addMoodEntry, loadEntries, deleteEntry, todaysMood, recentEntries, currentStreak, longestStreak | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/providers/insights_provider.dart | InsightsProvider — calculateInsights (wired to InsightService) | Rajat Mahajan | 11 Apr 2026 |
@@ -40,12 +40,11 @@
 | lib/screens/settings_screen.dart | SettingsScreen FULL — Appearance, Notifications (toggle + time picker), Data, About sections | Piyush Puri | 12 Apr 2026 |
 | lib/widgets/mood_scale_widget.dart | MoodScaleWidget FULL — animated emoji, color circles, tap-to-select, AnimatedSwitcher, motivational text | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/widgets/emotion_tag_selector.dart | EmotionTagSelector FULL — FilterChip picker, max 5 selection cap, disabled state | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — month nav, color grid, tap-to-view, legend, entry count | Piyush Puri | 11 Apr 2026 |
+| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — month nav, color grid, tap-to-view, legend, entry count; fixed icon bug + withOpacity → withValues | Piyush Puri | 13 Apr 2026 |
 | lib/widgets/streak_counter.dart | StreakCounter FULL — bento grid, progress bar, goal display. Wired into CalendarScreen | Piyush Puri | 12 Apr 2026 |
-| lib/widgets/mood_chart.dart | MoodChart FULL — fl_chart line chart, 30-day trend, gradient fill, tooltips | Piyush Puri | 11 Apr 2026 |
+| lib/widgets/mood_chart.dart | MoodChart FULL — fl_chart line chart, 30-day trend, gradient fill, tooltips; withOpacity → withValues | Piyush Puri | 13 Apr 2026 |
 | lib/widgets/bottom_nav_bar.dart | EmotracBottomNavBar FULL — styled nav with active/inactive icons | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/widgets/mood_entry_card.dart | MoodEntryCard FULL — emoji circle, relative date, mood score, emotion tags, mood-color border | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — fixed Icons.database_outlined bug → Icons.storage_rounded | Piyush Puri | 13 Apr 2026 |
 | lib/utils/date_utils.dart | AppDateUtils — formatDate, relativeLabel, calculateCurrentStreak | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/color_utils.dart | AppColorUtils — getMoodColor, getMoodLabel, getMoodEmoji | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/validation_utils.dart | ValidationUtils — validateMoodScore, validateNotes, validateEmail | Rajat Mahajan | 11 Apr 2026 |
@@ -93,8 +92,8 @@
 
 | Issue | Raised by | Needs action from | Status |
 |-------|-----------|-------------------|--------|
-| lib/config/theme.dart, constants.dart, routes.dart were missing from Rajat's commit — Piyush recreated them from context; Rajat should review and confirm accuracy | Piyush Puri | Rajat Mahajan | Needs review |
-| DatabaseService.init() must be called before any service is used — not yet in main.dart | Rajat Mahajan | Rajat Mahajan (next session) | Pending |
+| lib/config/theme.dart, constants.dart, routes.dart were missing from Rajat's commit — Piyush recreated them from context; Rajat should review and confirm accuracy | Piyush Puri | Rajat Mahajan | Reviewed + confirmed ✓ Piyush 13 Apr |
+| DatabaseService.init() must be called before any service is used — not yet in main.dart | Rajat Mahajan | Rajat Mahajan (next session) | Fixed ✓ Piyush 13 Apr |
 | InsightsProvider.calculateInsights() — InsightService now FULLY implemented; call will return real data once DB has entries | Piyush Puri | — | Resolved |
 | MoodEntryCard imports moodColors from theme.dart — confirmed: moodColors is now top-level const in theme.dart, import path correct | Piyush Puri | — | Resolved |
 | StreakCounter widget is DONE FULL — Rajat can use it directly in HomeScreen. Props: currentStreak (int), longestStreak (int). Import: lib/widgets/streak_counter.dart | Piyush Puri | Rajat Mahajan (info, no blocker) | Used in HomeScreen ✓ |
@@ -107,7 +106,7 @@
 
 ```
 lib/
-  main.dart                                         DONE — Rajat Mahajan
+  main.dart                                         DONE FULL — Rajat Mahajan / Piyush Puri
   config/
     theme.dart                                      DONE — Rajat Mahajan (Piyush recreated)
     constants.dart                                  DONE — Rajat Mahajan (Piyush recreated)
@@ -162,6 +161,9 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | 439e297 | fix: add explicit config-review task to Rajat's work queue in HIGHLIGHT.md | feature/mood_to_tracker_2 | Piyush Puri | 11 Apr 2026 |
 | 9b6806f | feat: SettingsScreen full UI, StreakCounter full impl, pull-to-refresh CalendarScreen + InsightsScreen | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
 | 65fe1b3 | docs: add dual-agent coordination protocol and mega prompt for Rajat's Claude | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
+| ddd560a | docs: fix HIGHLIGHT.md commit history — add hashes, correct dates, fix duplicate column | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
+| 846c916 | feat: complete Rajat's full queue — HomeScreen, MoodEntryScreen, all widget shells, DB init fix | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 445ee64 | fix: resolve all flutter analyze warnings — 0 issues clean | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
 
 ---
 
