@@ -230,7 +230,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: cellColor.withOpacity(entry != null ? 1.0 : 0.4),
+          color: cellColor.withValues(alpha: entry != null ? 1.0 : 0.4),
           borderRadius: BorderRadius.circular(6),
           border: isToday
               ? Border.all(color: AppTheme.tealLight, width: 1.5)
@@ -242,7 +242,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                   '${day.day}',
                   style: TextStyle(
                     color: entry != null
-                        ? Colors.white.withOpacity(0.9)
+                        ? Colors.white.withValues(alpha: 0.9)
                         : AppTheme.textSecondary,
                     fontSize: 9,
                     fontWeight: FontWeight.w600,
@@ -335,10 +335,10 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.teal.withOpacity(0.15),
+                            color: AppTheme.teal.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                                color: AppTheme.teal.withOpacity(0.3)),
+                                color: AppTheme.teal.withValues(alpha: 0.3)),
                           ),
                           child: Text(tag,
                               style: const TextStyle(
