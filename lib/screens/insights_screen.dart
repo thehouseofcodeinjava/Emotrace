@@ -1,15 +1,18 @@
-// Screen: InsightsScreen | Author: Piyush Puri | Date: 11 Apr 2026
-// Updated: 12 Apr 2026 — added pull-to-refresh
+// Screen: InsightsScreen | Author: Piyush Puri | Date: 13 Apr 2026
+// Updated: 13 Apr 2026 — share PDF action added to SliverAppBar
 // Design reference: design/insights/code.html
 // Features: stability score, 30-day mood trend chart, best/worst day pattern cards, emotion frequency bars.
 
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
+import '../models/mood_entry_model.dart';
 import '../providers/insights_provider.dart';
 import '../providers/mood_provider.dart';
 import '../services/insight_service.dart';
+import '../services/pdf_service.dart';
 import '../widgets/mood_chart.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -20,6 +23,32 @@ class InsightsScreen extends StatefulWidget {
 }
 
 class _InsightsScreenState extends State<InsightsScreen> {
+  bool _isSharing = false;
+
+  Future<void> _shareInsightsPdf(
+    BuildContext context,
+    Insights insights,
+    List<MoodEntry> entries,
+  ) async {
+    if (_isSharing) return;
+    setState(() => _isSharing = true);
+    try {
+      final bytes = await PdfService.buildInsightsPdf(insights, entries);
+      await Printing.sharePdf(bytes: bytes, filename: 'emotrace_insights.pdf');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: AppTheme.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +101,30 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       letterSpacing: -0.5,
                     )),
                 elevation: 0,
+                actions: [
+                  _isSharing
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.teal,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.share_outlined,
+                              color: AppTheme.textSecondary),
+                          tooltip: 'Share Insights PDF',
+                          onPressed: () => _shareInsightsPdf(
+                            context,
+                            insights,
+                            List<MoodEntry>.from(entries),
+                          ),
+                        ),
+                ],
               ),
 
               SliverToBoxAdapter(
