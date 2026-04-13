@@ -1,16 +1,51 @@
-// Screen: SettingsScreen | Author: Piyush Puri | Date: 12 Apr 2026
+// Screen: SettingsScreen | Author: Piyush Puri | Date: 13 Apr 2026
 // Full UI implementation — Appearance, Notifications, Data, About sections
 // Replaces Rajat Mahajan's shell (11 Apr 2026)
 
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/settings_provider.dart';
-import '../config/theme.dart';
 import '../config/constants.dart';
+import '../config/theme.dart';
+import '../providers/mood_provider.dart';
+import '../providers/settings_provider.dart';
+import '../services/pdf_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isExporting = false;
+
+  Future<void> _exportHistoryPdf(BuildContext context) async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+    try {
+      final provider = context.read<MoodProvider>();
+      final bytes = await PdfService.buildHistoryPdf(
+        provider.entries,
+        provider.currentStreak,
+        provider.longestStreak,
+      );
+      await Printing.sharePdf(bytes: bytes, filename: 'emotrace_history.pdf');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: AppTheme.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,13 +105,24 @@ class SettingsScreen extends StatelessWidget {
                   _SettingsTile(
                     icon: Icons.download_rounded,
                     iconColor: AppTheme.teal,
-                    title: 'Export Data',
-                    subtitle: 'Download all your mood entries as CSV',
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppTheme.textSecondary,
-                    ),
-                    onTap: () => _showComingSoon(context, 'Export Data'),
+                    title: 'Export Mood History',
+                    subtitle: 'Share all your mood entries as a PDF report',
+                    trailing: _isExporting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.teal,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppTheme.textSecondary,
+                          ),
+                    onTap: _isExporting
+                        ? null
+                        : () => _exportHistoryPdf(context),
                   ),
                   const _Divider(),
                   _SettingsTile(
@@ -202,14 +248,6 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature — coming in Week 5'),
-        backgroundColor: AppTheme.cardHigh,
-      ),
-    );
-  }
 }
 
 // ─── Section card wrapper ────────────────────────────────────────────────────

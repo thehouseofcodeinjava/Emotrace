@@ -7,12 +7,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../config/constants.dart';
+import '../config/routes.dart';
 import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
 import '../providers/mood_provider.dart';
 import '../widgets/mood_entry_card.dart';
 import '../widgets/streak_counter.dart';
-import 'mood_entry_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,10 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refresh(MoodProvider provider) => provider.loadEntries();
 
   void _goToMoodEntry() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MoodEntryScreen()),
-    ).then((_) => context.read<MoodProvider>().loadEntries());
+    Navigator.pushNamed(context, AppRoutes.moodEntry)
+        .then((_) => context.read<MoodProvider>().loadEntries());
   }
 
   @override

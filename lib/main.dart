@@ -1,23 +1,28 @@
 // Screen: App Entry Point | Author: Rajat Mahajan | Date: 11 Apr 2026
-// TODO: main entry point | Author: Rajat Mahajan
+// Updated: Piyush Puri | Date: 13 Apr 2026
+// Wired: DatabaseService.init, NotificationService.init, SettingsProvider.loadSettings,
+// named routes via AppRoutes.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'config/routes.dart';
 import 'config/theme.dart';
-import 'services/database_service.dart';
-import 'providers/mood_provider.dart';
-import 'providers/settings_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/insights_provider.dart';
-import 'screens/home_screen.dart';
+import 'providers/mood_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/database_service.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService().init();
+  await NotificationService().init();
   runApp(const EmotracApp());
 }
 
@@ -31,13 +36,18 @@ class EmotracApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MoodProvider()),
         ChangeNotifierProvider(create: (_) => InsightsProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(
+          // loadSettings() fires async in background — UI shows defaults
+          // then rebuilds automatically when settings are loaded from DB.
+          create: (_) => SettingsProvider()..loadSettings(),
+        ),
       ],
       child: MaterialApp(
         title: 'EMOTRACE',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const MainNavigation(),
+        routes: AppRoutes.routes,
       ),
     );
   }
@@ -68,10 +78,26 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart_outlined), label: 'Insights'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month_outlined),
+            activeIcon: Icon(Icons.calendar_month_rounded),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Insights',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings_rounded),
+            label: 'Settings',
+          ),
         ],
       ),
     );

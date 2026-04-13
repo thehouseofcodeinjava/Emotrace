@@ -1,13 +1,17 @@
-// TODO: settings provider | Author: Rajat Mahajan
-// Provider: SettingsProvider — theme, notifications, reminder time
+// Provider: SettingsProvider | Author: Rajat Mahajan | Date: 11 Apr 2026
+// Persistence + notification wiring: Piyush Puri | Date: 13 Apr 2026
+// Keeps void mutator signatures so Switch.onChanged stays compatible.
 
 import 'package:flutter/foundation.dart';
 
 import '../models/settings_model.dart';
+import '../services/notification_service.dart';
+import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  // Temporary placeholder until auth is implemented in Month 2
   static const String _tempUserId = 'local_user_01';
+
+  final SettingsService _settingsService = SettingsService();
 
   Settings _settings = Settings.defaults(_tempUserId);
 
@@ -16,21 +20,53 @@ class SettingsProvider extends ChangeNotifier {
   bool get dailyReminderEnabled => _settings.dailyReminderEnabled;
   String get reminderTime => _settings.reminderTime;
 
+  /// Called once from main.dart after DatabaseService.init().
+  /// Falls back to Settings.defaults() silently on any error.
+  Future<void> loadSettings() async {
+    try {
+      final saved = await _settingsService.loadSettings(_tempUserId);
+      if (saved != null) {
+        _settings = saved;
+        notifyListeners();
+      }
+    } catch (_) {
+      // defaults already set — never crash on settings load
+    }
+  }
+
   void updateTheme(String theme) {
     _settings = _settings.copyWith(theme: theme);
     notifyListeners();
-    // TODO: persist to database
+    _saveQuietly();
   }
 
   void toggleReminder(bool enabled) {
     _settings = _settings.copyWith(dailyReminderEnabled: enabled);
     notifyListeners();
-    // TODO: persist to database + schedule/cancel notification
+    _saveQuietly().then((_) {
+      if (enabled) {
+        NotificationService().scheduleDailyReminder(_settings.reminderTime);
+      } else {
+        NotificationService().cancelDailyReminder();
+      }
+    });
   }
 
   void updateReminderTime(String time) {
     _settings = _settings.copyWith(reminderTime: time);
     notifyListeners();
-    // TODO: persist to database + reschedule notification
+    _saveQuietly().then((_) {
+      if (_settings.dailyReminderEnabled) {
+        NotificationService().scheduleDailyReminder(time);
+      }
+    });
+  }
+
+  Future<void> _saveQuietly() async {
+    try {
+      await _settingsService.saveSettings(_settings);
+    } catch (_) {
+      // state is already updated in memory — DB failure must not block UX
+    }
   }
 }

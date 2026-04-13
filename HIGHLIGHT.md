@@ -7,7 +7,7 @@
 - Date: 13 Apr 2026
 - Author: Piyush Puri
 - Branch: feature/mood_to_tracker_2
-- Summary: Session 4 — Completed Rajat's full queue (Rajat away). Fixed critical DB init bug in main.dart (DatabaseService.init() was never called). Added currentStreak + longestStreak computed getters to MoodProvider. Built full HomeScreen dashboard (greeting, today's mood card, StreakCounter, recent entries, FAB). Built full MoodEntryScreen (MoodScaleWidget + EmotionTagSelector + notes + save → MoodProvider). Completed all widget shells: MoodScaleWidget (animated emoji + scale + motivational text), EmotionTagSelector (max 5 cap), MoodEntryCard (mood color + relative date + emotions), EmotracBottomNavBar (styled). Fixed pre-existing bug in CalendarHeatmap (Icons.database_outlined → Icons.storage_rounded). Fixed all flutter analyze warnings: removed unused _tempUserId from InsightService, replaced withOpacity() → withValues(alpha:) in CalendarHeatmap x3 and MoodChart x2. flutter analyze: No issues found.
+- Summary: Session 5 (beta completion) — Added packages: timezone, flutter_timezone, pdf, printing. Created SettingsService (DB read/write). Rewrote SettingsProvider with loadSettings() persistence + notification scheduling via toggleReminder/updateReminderTime (void for Switch compat, async via .then()). Rewrote NotificationService: full daily reminder via zonedSchedule + DateTimeComponents.time + AndroidScheduleMode.inexact. Wired DatabaseService.init() + NotificationService.init() + AppRoutes.routes in main.dart. Created PdfService (buildHistoryPdf + buildInsightsPdf, ASCII-only for Helvetica compat); 4 unit tests pass. Wired Export Mood History tile in SettingsScreen (StatefulWidget, _isExporting guard, Printing.sharePdf). Wired Share icon in InsightsScreen SliverAppBar (_isSharing guard, Printing.sharePdf). Fixed analyze: missing uiLocalNotificationDateInterpretation arg, removed unused constants.dart import in pdf_service. flutter analyze: No issues found. flutter test: 4/4 pass.
 
 ---
 
@@ -28,16 +28,18 @@
 | lib/services/mood_service.dart | MoodService — saveMoodEntry, getMoodEntries, getTodaysMood, getRecentEntries, delete | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/auth_service.dart | AuthService stub — login/logout/getCurrentUser (Month 2) | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/insight_service.dart | InsightService — FULL algorithms: streak, stability score, day-of-week, emotion freq; removed unused _tempUserId | Piyush Puri | 13 Apr 2026 |
-| lib/services/notification_service.dart | NotificationService stub — schedule/cancel daily reminder (Week 5) | Rajat Mahajan | 11 Apr 2026 |
+| lib/services/notification_service.dart | NotificationService FULL — init, scheduleDailyReminder (zonedSchedule + DateTimeComponents.time), cancelDailyReminder | Piyush Puri | 13 Apr 2026 |
+| lib/services/settings_service.dart | SettingsService — loadSettings (returns null on first launch), saveSettings (upsert) | Piyush Puri | 13 Apr 2026 |
+| lib/services/pdf_service.dart | PdfService — buildHistoryPdf (summary + entries table), buildInsightsPdf (hero score + patterns + emotion bars); ASCII-only | Piyush Puri | 13 Apr 2026 |
 | lib/providers/mood_provider.dart | MoodProvider — addMoodEntry, loadEntries, deleteEntry, todaysMood, recentEntries, currentStreak, longestStreak | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/providers/insights_provider.dart | InsightsProvider — calculateInsights (wired to InsightService) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/auth_provider.dart | AuthProvider stub — login/logout (Month 2) | Rajat Mahajan | 11 Apr 2026 |
-| lib/providers/settings_provider.dart | SettingsProvider — theme, reminders, reminderTime | Rajat Mahajan | 11 Apr 2026 |
+| lib/providers/settings_provider.dart | SettingsProvider FULL — loadSettings from DB, persist on change, wire NotificationService scheduling; void mutators for Switch compat | Piyush Puri | 13 Apr 2026 |
 | lib/screens/home_screen.dart | HomeScreen FULL — greeting, today's mood card, StreakCounter, recent entries, FAB, pull-to-refresh | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/screens/mood_entry_screen.dart | MoodEntryScreen FULL — MoodScaleWidget + EmotionTagSelector + notes TextField + save → MoodProvider | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/screens/calendar_screen.dart | CalendarScreen FULL — StreakCounter wired, 90-day heatmap, month nav, trends card, pull-to-refresh | Piyush Puri | 12 Apr 2026 |
-| lib/screens/insights_screen.dart | InsightsScreen FULL — stability score, 30-day chart, pattern cards, emotion bars, pull-to-refresh | Piyush Puri | 12 Apr 2026 |
-| lib/screens/settings_screen.dart | SettingsScreen FULL — Appearance, Notifications (toggle + time picker), Data, About sections | Piyush Puri | 12 Apr 2026 |
+| lib/screens/insights_screen.dart | InsightsScreen FULL — stability score, 30-day chart, pattern cards, emotion bars, pull-to-refresh, Share PDF action | Piyush Puri | 13 Apr 2026 |
+| lib/screens/settings_screen.dart | SettingsScreen FULL — Appearance, Notifications (toggle + time picker), Export Mood History PDF, Clear All Data, About | Piyush Puri | 13 Apr 2026 |
 | lib/widgets/mood_scale_widget.dart | MoodScaleWidget FULL — animated emoji, color circles, tap-to-select, AnimatedSwitcher, motivational text | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/widgets/emotion_tag_selector.dart | EmotionTagSelector FULL — FilterChip picker, max 5 selection cap, disabled state | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — month nav, color grid, tap-to-view, legend, entry count; fixed icon bug + withOpacity → withValues | Piyush Puri | 13 Apr 2026 |
@@ -78,12 +80,12 @@
 - [x] Add pull-to-refresh on CalendarScreen and InsightsScreen — Piyush Puri ✓ 12 Apr 2026
 
 ### Medium Priority
-- [ ] NotificationService implementation — Week 5
+- [x] NotificationService implementation — DONE FULL Piyush Puri ✓ 13 Apr 2026 (zonedSchedule, daily repeat, cancelDailyReminder)
 - [x] SettingsScreen reminder time picker — DONE (built in SettingsScreen full UI, Piyush Puri, 12 Apr 2026)
 
 ### Low Priority
-- [ ] PDF export feature
-- [ ] Push notification full integration
+- [x] PDF export feature — DONE FULL Piyush Puri ✓ 13 Apr 2026 (History PDF from Settings + Insights PDF from Insights share icon)
+- [x] Push notification full integration — DONE FULL Piyush Puri ✓ 13 Apr 2026 (wired through SettingsProvider.toggleReminder)
 - [ ] Auth (Month 2)
 
 ---
@@ -121,18 +123,20 @@ lib/
     mood_service.dart                               DONE — Rajat Mahajan
     auth_service.dart                               DONE stub — Rajat Mahajan
     insight_service.dart                            DONE FULL — Piyush Puri
-    notification_service.dart                       DONE stub — Rajat Mahajan
+    notification_service.dart                       DONE FULL — Piyush Puri
+    pdf_service.dart                                DONE FULL — Piyush Puri
+    settings_service.dart                           DONE FULL — Piyush Puri
   providers/
-    mood_provider.dart                              DONE — Rajat Mahajan
+    mood_provider.dart                              DONE — Rajat Mahajan / Piyush Puri
     insights_provider.dart                          DONE — Rajat Mahajan
     auth_provider.dart                              DONE stub — Rajat Mahajan
-    settings_provider.dart                          DONE — Rajat Mahajan
+    settings_provider.dart                          DONE FULL — Piyush Puri
   screens/
     home_screen.dart                                DONE FULL — Rajat Mahajan / Piyush Puri
     mood_entry_screen.dart                          DONE FULL — Rajat Mahajan / Piyush Puri
     calendar_screen.dart                            DONE FULL — Piyush Puri
-    insights_screen.dart                            DONE FULL — Piyush Puri
-    settings_screen.dart                            DONE FULL — Piyush Puri
+    insights_screen.dart                            DONE FULL — Piyush Puri (Share PDF 13 Apr)
+    settings_screen.dart                            DONE FULL — Piyush Puri (Export PDF 13 Apr)
   widgets/
     mood_scale_widget.dart                          DONE FULL — Rajat Mahajan / Piyush Puri
     emotion_tag_selector.dart                       DONE FULL — Rajat Mahajan / Piyush Puri
@@ -164,6 +168,14 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | ddd560a | docs: fix HIGHLIGHT.md commit history — add hashes, correct dates, fix duplicate column | feature/mood_to_tracker_2 | Piyush Puri | 12 Apr 2026 |
 | 846c916 | feat: complete Rajat's full queue — HomeScreen, MoodEntryScreen, all widget shells, DB init fix | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
 | 445ee64 | fix: resolve all flutter analyze warnings — 0 issues clean | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| f67cd7f | chore: add pdf, printing, timezone, flutter_timezone packages | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 2c0f0b7 | feat: add SettingsService — DB read/write for settings table | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| be64050 | feat: SettingsProvider — persist settings to DB, wire notification scheduling | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 4c323dd | feat: NotificationService — daily reminder scheduling via flutter_local_notifications | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 3c7d767 | feat: wire NotificationService.init + SettingsProvider.loadSettings in main, named routes | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| b75bc25 | feat: PdfService — buildHistoryPdf + buildInsightsPdf; 4 tests passing | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 14822fc | feat: wire PDF export in SettingsScreen — Export Mood History tile | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 7f53586 | feat: wire PDF share in InsightsScreen — share icon in SliverAppBar | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
 
 ---
 
@@ -178,3 +190,7 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | Bottom nav: 4 tabs (Home, Calendar, Insights, Settings) — Mood Entry via FAB/push | Rajat Mahajan | 11 Apr 2026 |
 | moodColors defined as top-level const in theme.dart (not inside AppTheme class) — required by MoodEntryCard import | Piyush Puri | 11 Apr 2026 |
 | InsightService algorithms implemented in Session 2 (not Week 5-6 as originally planned) — algorithms were simple enough to do now | Piyush Puri | 11 Apr 2026 |
+| NotificationService uses AndroidScheduleMode.inexact (no SCHEDULE_EXACT_ALARM permission needed for MVP) | Piyush Puri | 13 Apr 2026 |
+| PDF uses Helvetica (pdf package default) — ASCII-only; no em-dashes, bullets, or block chars (produce blank glyphs) | Piyush Puri | 13 Apr 2026 |
+| SettingsProvider mutators are void (not async) for Switch.onChanged compatibility; async notification calls use .then() | Piyush Puri | 13 Apr 2026 |
+| AndroidManifest.xml not yet present (no platform dirs committed); RECEIVE_BOOT_COMPLETED + POST_NOTIFICATIONS permissions needed when developer runs flutter create --platforms android,ios | Piyush Puri | 13 Apr 2026 |
