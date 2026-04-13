@@ -1,11 +1,11 @@
 // Widget: StreakCounter | Author: Piyush Puri | Date: 12 Apr 2026
-// Full bento-grid implementation — replaces Rajat Mahajan's shell (11 Apr 2026)
-// Used by: CalendarScreen (and HomeScreen in Week 2)
+// Redesign: Session 7 (13 Apr 2026) — pluralization fix, warmer copy, depth.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../config/theme.dart';
 import '../config/constants.dart';
+import '../config/theme.dart';
 
 class StreakCounter extends StatelessWidget {
   final int currentStreak;
@@ -17,46 +17,43 @@ class StreakCounter extends StatelessWidget {
     required this.longestStreak,
   });
 
+  String _days(int n) => n == 1 ? '1 day' : '$n days';
+
   @override
   Widget build(BuildContext context) {
     final progress =
         (currentStreak / AppConstants.streakGoal).clamp(0.0, 1.0);
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Current streak card (larger) ──────────────────────────────
+        // ── Current streak card ────────────────────────────────
         Expanded(
           flex: 3,
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              border: Border.all(color: AppTheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'CONSISTENCY',
-                  style: TextStyle(
-                    color: AppTheme.orange,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                Text('CONSISTENCY', style: AppTheme.microLabel(color: AppTheme.orange)),
+                const SizedBox(height: 12),
                 Text(
                   currentStreak == 0
-                      ? 'Start your streak!'
-                      : 'Current Streak: $currentStreak days 🔥',
-                  style: const TextStyle(
+                      ? 'Start your streak'
+                      : '${_days(currentStreak)} 🔥',
+                  style: GoogleFonts.inter(
                     color: AppTheme.textPrimary,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -71,11 +68,14 @@ class StreakCounter extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
-                      'Goal: ${AppConstants.streakGoal}',
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 11),
+                      'Goal ${AppConstants.streakGoal}',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textTertiary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -85,32 +85,27 @@ class StreakCounter extends StatelessWidget {
         ),
         const SizedBox(width: 12),
 
-        // ── Longest streak card ───────────────────────────────────────
+        // ── Longest streak card ────────────────────────────────
         Expanded(
           flex: 2,
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppTheme.cardHigh,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              border: Border.all(color: AppTheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Longest Streak',
-                  style: TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 12),
-                ),
+                Text('LONGEST', style: AppTheme.microLabel()),
                 const SizedBox(height: 8),
                 Text(
-                  '$longestStreak days',
-                  style: const TextStyle(
+                  _days(longestStreak),
+                  style: AppTheme.displaySerif(
+                    size: 30,
                     color: AppTheme.tealLight,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
                     letterSpacing: -1,
                   ),
                 ),
