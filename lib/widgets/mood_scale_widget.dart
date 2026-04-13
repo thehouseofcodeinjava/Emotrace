@@ -1,9 +1,11 @@
-// TODO: mood scale widget — 1-10 emoji selector | Author: Rajat Mahajan
+// Widget: MoodScaleWidget | Author: Rajat Mahajan | Date: 11 Apr 2026
+// Full impl: Piyush Puri | Date: 13 Apr 2026
+// Emoji + numbered scale, tap-to-select, color gradient, motivational text
 
 import 'package:flutter/material.dart';
 
-import '../config/theme.dart';
 import '../config/constants.dart';
+import '../config/theme.dart';
 
 class MoodScaleWidget extends StatelessWidget {
   final int selectedMood;
@@ -17,42 +19,66 @@ class MoodScaleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Implement full emoji scale with tap-to-select, color gradient, motivational text
     return Column(
       children: [
-        Text(
-          AppConstants.moodEmojis[selectedMood] ?? '',
-          style: const TextStyle(fontSize: 64),
+        // ── Big emoji + label ────────────────────────────────
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) =>
+              ScaleTransition(scale: animation, child: child),
+          child: Text(
+            AppConstants.moodEmojis[selectedMood] ?? '',
+            key: ValueKey(selectedMood),
+            style: const TextStyle(fontSize: 72),
+          ),
         ),
         const SizedBox(height: 8),
-        Text(
-          AppConstants.moodLabels[selectedMood] ?? '',
-          style: const TextStyle(color: AppTheme.teal, fontWeight: FontWeight.bold),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 150),
+          child: Text(
+            AppConstants.moodLabels[selectedMood] ?? '',
+            key: ValueKey('label_$selectedMood'),
+            style: TextStyle(
+              color: moodColors[selectedMood] ?? AppTheme.teal,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
+
+        const SizedBox(height: 24),
+
+        // ── Number circles ───────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(10, (i) {
             final mood = i + 1;
             final isSelected = mood == selectedMood;
+            final color = moodColors[mood] ?? AppTheme.teal;
+
             return GestureDetector(
               onTap: () => onMoodSelected(mood),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: isSelected ? 36 : 28,
-                height: isSelected ? 36 : 28,
+                width: isSelected ? 38 : 28,
+                height: isSelected ? 38 : 28,
                 decoration: BoxDecoration(
-                  color: moodColors[mood],
+                  color: isSelected ? color : color.withValues(alpha: 0.35),
                   shape: BoxShape.circle,
                   border: isSelected
                       ? Border.all(color: Colors.white, width: 2)
+                      : null,
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8)]
                       : null,
                 ),
                 child: Center(
                   child: Text(
                     '$mood',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isSelected ? Colors.white : AppTheme.textSecondary,
                       fontSize: isSelected ? 14 : 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -62,10 +88,22 @@ class MoodScaleWidget extends StatelessWidget {
             );
           }),
         ),
-        const SizedBox(height: 8),
-        Text(
-          AppConstants.moodMotivations[selectedMood] ?? '',
-          style: const TextStyle(color: AppTheme.textSecondary),
+
+        const SizedBox(height: 16),
+
+        // ── Motivational text ────────────────────────────────
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Text(
+            AppConstants.moodMotivations[selectedMood] ?? '',
+            key: ValueKey('motivation_$selectedMood'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
         ),
       ],
     );

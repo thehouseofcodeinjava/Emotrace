@@ -112,8 +112,8 @@ class MoodChart extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.tealLight.withOpacity(0.3),
-                    AppTheme.tealLight.withOpacity(0.0),
+                    AppTheme.tealLight.withValues(alpha: 0.3),
+                    AppTheme.tealLight.withValues(alpha: 0.0),
                   ],
                 ),
               ),

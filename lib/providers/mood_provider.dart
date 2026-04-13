@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/mood_entry_model.dart';
 import '../services/mood_service.dart';
 import '../config/constants.dart';
+import '../utils/date_utils.dart';
 
 class MoodProvider extends ChangeNotifier {
   final MoodService _moodService = MoodService();
@@ -37,6 +38,31 @@ class MoodProvider extends ChangeNotifier {
 
   List<MoodEntry> get recentEntries =>
       _entries.take(AppConstants.recentEntriesCount).toList();
+
+  int get currentStreak {
+    final dates = _entries.map((e) => e.createdAt).toList();
+    return AppDateUtils.calculateCurrentStreak(dates);
+  }
+
+  int get longestStreak {
+    if (_entries.isEmpty) return 0;
+    final days = _entries
+        .map((e) => DateTime(e.createdAt.year, e.createdAt.month, e.createdAt.day))
+        .toSet()
+        .toList()
+      ..sort();
+    int longest = 1;
+    int current = 1;
+    for (int i = 1; i < days.length; i++) {
+      if (days[i].difference(days[i - 1]).inDays == 1) {
+        current++;
+        if (current > longest) longest = current;
+      } else {
+        current = 1;
+      }
+    }
+    return longest;
+  }
 
   Future<void> addMoodEntry(
     int moodScore,

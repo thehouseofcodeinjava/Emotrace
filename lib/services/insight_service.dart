@@ -45,8 +45,6 @@ class Insights {
 class InsightService {
   final DatabaseService _db = DatabaseService();
 
-  static const String _tempUserId = 'local_user_01';
-
   Future<Insights> getInsights(String userId) async {
     final from90 = DateTime.now().subtract(const Duration(days: 90));
     final from30 = DateTime.now().subtract(const Duration(days: 30));

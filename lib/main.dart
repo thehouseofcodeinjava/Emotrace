@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
+import 'services/database_service.dart';
 import 'providers/mood_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/auth_provider.dart';
@@ -16,6 +17,7 @@ import 'screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseService().init();
   runApp(const EmotracApp());
 }
 
