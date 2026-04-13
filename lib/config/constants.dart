@@ -44,18 +44,18 @@ class AppConstants {
     10: '🤩',
   };
 
-  // Mood label map (1-10)
+  // Mood label map (1-10) — warm micro-copy, sentence case
   static const Map<int, String> moodLabels = {
-    1:  'VIBE: TERRIBLE',
-    2:  'VIBE: BAD',
-    3:  'VIBE: LOW',
-    4:  'VIBE: MEH',
-    5:  'VIBE: OKAY',
-    6:  'VIBE: DECENT',
-    7:  'VIBE: BALANCED',
-    8:  'VIBE: GOOD',
-    9:  'VIBE: GREAT',
-    10: 'VIBE: AMAZING',
+    1:  'Rough day',
+    2:  'Struggling',
+    3:  'Feeling low',
+    4:  'A bit off',
+    5:  'Just okay',
+    6:  'Pretty decent',
+    7:  'Feeling good',
+    8:  'Really good',
+    9:  'Thriving',
+    10: 'On top of the world',
   };
 
   // Motivational messages shown on Mood Entry screen

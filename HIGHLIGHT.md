@@ -5,9 +5,15 @@
 
 ## Last Session
 - Date: 13 Apr 2026
+- Author: Rajat Mahajan
+- Branch: feature/mood_to_tracker_1
+- Summary: Session 7 (UI Redesign) — Full premium redesign of all 5 screens + all 7 widgets + main.dart nav. Added google_fonts ^6.2.1 (Inter + Fraunces). Rewrote theme.dart: layered dark surfaces (#0A0E14→#1E2630), mood-mapped gradient palette (red→amber→teal 10 steps), displaySerif()/microLabel()/moodColor() helpers, radiusSm/Md/Lg/Xl tokens. Updated constants.dart: warm mood labels ("Rough day" → "On top of the world"). Redesigned all widgets: gradient slider MoodScaleWidget, pill EmotionTagSelector, pluralization-fixed StreakCounter, serif-score MoodEntryCard, ghost-line MoodChart, pill-indicator BottomNavBar (renamed Insights→Patterns), CalendarHeatmap color system + glow cells. Redesigned all 5 screens: Fraunces headings, microLabel section labels, warm micro-copy throughout. Replaced stock BottomNavigationBar in main.dart with EmotracBottomNavBar widget.
+
+## Previous Last Session (Session 5/6 — Piyush Puri)
+- Date: 13 Apr 2026
 - Author: Piyush Puri
 - Branch: feature/mood_to_tracker_2
-- Summary: Session 5 (beta completion) — Added packages: timezone, flutter_timezone, pdf, printing. Created SettingsService (DB read/write). Rewrote SettingsProvider with loadSettings() persistence + notification scheduling via toggleReminder/updateReminderTime (void for Switch compat, async via .then()). Rewrote NotificationService: full daily reminder via zonedSchedule + DateTimeComponents.time + AndroidScheduleMode.inexact. Wired DatabaseService.init() + NotificationService.init() + AppRoutes.routes in main.dart. Created PdfService (buildHistoryPdf + buildInsightsPdf, ASCII-only for Helvetica compat); 4 unit tests pass. Wired Export Mood History tile in SettingsScreen (StatefulWidget, _isExporting guard, Printing.sharePdf). Wired Share icon in InsightsScreen SliverAppBar (_isSharing guard, Printing.sharePdf). Fixed analyze: missing uiLocalNotificationDateInterpretation arg, removed unused constants.dart import in pdf_service. flutter analyze: No issues found. flutter test: 4/4 pass.
+- Summary: Session 5 — Added packages: timezone, flutter_timezone, pdf, printing. Created SettingsService (DB read/write). Rewrote SettingsProvider with loadSettings() persistence + notification scheduling. Rewrote NotificationService: full daily reminder via zonedSchedule + DateTimeComponents.time. Wired DB init + NotificationService.init() + AppRoutes.routes in main.dart. Created PdfService (buildHistoryPdf + buildInsightsPdf, ASCII-only); 4 unit tests pass. Session 6 — Generated android/ios platform dirs, patched AndroidManifest for notifications.
 
 ## Session 6 — Platform Setup
 - Date: 13 Apr 2026
@@ -21,11 +27,11 @@
 
 | File | What it does | Author | Date completed |
 |------|-------------|--------|----------------|
-| lib/config/theme.dart | AppTheme dark theme, moodColors map | Rajat Mahajan (Piyush recreated) | 11 Apr 2026 |
-| lib/config/constants.dart | All app constants — emotions, mood labels, emojis, motivations | Rajat Mahajan (Piyush recreated) | 11 Apr 2026 |
+| lib/config/theme.dart | AppTheme premium design system — layered surfaces, 10-step mood palette, displaySerif/microLabel/moodColor helpers, radius tokens | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/config/constants.dart | All app constants — emotions, warm mood labels, emojis, motivations | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
 | lib/config/routes.dart | AppRoutes named route map | Rajat Mahajan (Piyush recreated) | 11 Apr 2026 |
 | pubspec.yaml | Flutter project config with all dependencies | Piyush Puri | 11 Apr 2026 |
-| lib/main.dart | App entry point, MultiProvider, MainNavigation with bottom nav, DatabaseService.init() wired | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
+| lib/main.dart | App entry point, MultiProvider, MainNavigation — replaced stock BottomNavigationBar with EmotracBottomNavBar widget | Rajat Mahajan / Piyush Puri (redesign Session 7) | 13 Apr 2026 |
 | lib/models/user_model.dart | User class — fromMap/toMap, matches users table | Rajat Mahajan | 11 Apr 2026 |
 | lib/models/mood_entry_model.dart | MoodEntry class — fromMap/toMap, matches mood_entries table | Rajat Mahajan | 11 Apr 2026 |
 | lib/models/emotion_model.dart | Emotion class — fromMap/toMap, matches emotion_tags table | Rajat Mahajan | 11 Apr 2026 |
@@ -41,18 +47,18 @@
 | lib/providers/insights_provider.dart | InsightsProvider — calculateInsights (wired to InsightService) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/auth_provider.dart | AuthProvider stub — login/logout (Month 2) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/settings_provider.dart | SettingsProvider FULL — loadSettings from DB, persist on change, wire NotificationService scheduling; void mutators for Switch compat | Piyush Puri | 13 Apr 2026 |
-| lib/screens/home_screen.dart | HomeScreen FULL — greeting, today's mood card, StreakCounter, recent entries, FAB, pull-to-refresh | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/screens/mood_entry_screen.dart | MoodEntryScreen FULL — MoodScaleWidget + EmotionTagSelector + notes TextField + save → MoodProvider | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/screens/calendar_screen.dart | CalendarScreen FULL — StreakCounter wired, 90-day heatmap, month nav, trends card, pull-to-refresh | Piyush Puri | 12 Apr 2026 |
-| lib/screens/insights_screen.dart | InsightsScreen FULL — stability score, 30-day chart, pattern cards, emotion bars, pull-to-refresh, Share PDF action | Piyush Puri | 13 Apr 2026 |
-| lib/screens/settings_screen.dart | SettingsScreen FULL — Appearance, Notifications (toggle + time picker), Export Mood History PDF, Clear All Data, About | Piyush Puri | 13 Apr 2026 |
-| lib/widgets/mood_scale_widget.dart | MoodScaleWidget FULL — animated emoji, color circles, tap-to-select, AnimatedSwitcher, motivational text | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/widgets/emotion_tag_selector.dart | EmotionTagSelector FULL — FilterChip picker, max 5 selection cap, disabled state | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — month nav, color grid, tap-to-view, legend, entry count; fixed icon bug + withOpacity → withValues | Piyush Puri | 13 Apr 2026 |
-| lib/widgets/streak_counter.dart | StreakCounter FULL — bento grid, progress bar, goal display. Wired into CalendarScreen | Piyush Puri | 12 Apr 2026 |
-| lib/widgets/mood_chart.dart | MoodChart FULL — fl_chart line chart, 30-day trend, gradient fill, tooltips; withOpacity → withValues | Piyush Puri | 13 Apr 2026 |
-| lib/widgets/bottom_nav_bar.dart | EmotracBottomNavBar FULL — styled nav with active/inactive icons | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
-| lib/widgets/mood_entry_card.dart | MoodEntryCard FULL — emoji circle, relative date, mood score, emotion tags, mood-color border | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
+| lib/screens/home_screen.dart | HomeScreen FULL — Fraunces greeting, serif today's score, microLabel sections, warm empty state copy | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/screens/mood_entry_screen.dart | MoodEntryScreen FULL — Fraunces "How are you feeling?" header, microLabel section labels, outlineVariant notes field | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/screens/calendar_screen.dart | CalendarScreen FULL — Fraunces hero title, microLabel header, warm subtitle copy, outlineVariant heatmap card | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/screens/insights_screen.dart | InsightsScreen FULL — Fraunces stability score, microLabel sections, Inter section headers, warm pattern card copy | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/screens/settings_screen.dart | SettingsScreen FULL — Fraunces AppBar title, microLabel section headers, Inter tile text | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/mood_scale_widget.dart | MoodScaleWidget FULL — gradient slider (replaces circles), hero emoji glow, Fraunces serif score, drag interaction | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/emotion_tag_selector.dart | EmotionTagSelector FULL — custom pill chips, animated selection, max 5 cap | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — moodColor() palette, glow box shadows, outlineVariant borders, Fraunces month label, redesigned legend | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/streak_counter.dart | StreakCounter FULL — pluralization fix ("1 day" not "1 days"), Fraunces longest score, microLabel header | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/mood_chart.dart | MoodChart FULL — gradient stroke, mood-colored dots, ghost-line empty state via CustomPainter | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/bottom_nav_bar.dart | EmotracBottomNavBar FULL — custom pill-indicator bar, renamed Insights→Patterns, animated tealLight active state | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/widgets/mood_entry_card.dart | MoodEntryCard FULL — RadialGradient emoji circle, Fraunces serif score, outlineVariant border | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
 | lib/utils/date_utils.dart | AppDateUtils — formatDate, relativeLabel, calculateCurrentStreak | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/color_utils.dart | AppColorUtils — getMoodColor, getMoodLabel, getMoodEmoji | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/validation_utils.dart | ValidationUtils — validateMoodScore, validateNotes, validateEmail | Rajat Mahajan | 11 Apr 2026 |
@@ -158,7 +164,7 @@ lib/
     date_utils.dart                                 DONE — Rajat Mahajan
     color_utils.dart                                DONE — Rajat Mahajan
     validation_utils.dart                           DONE — Rajat Mahajan
-pubspec.yaml                                        DONE — Piyush Puri
+pubspec.yaml                                        DONE — Piyush Puri (google_fonts added Session 7)
 android/app/src/main/AndroidManifest.xml            DONE — Piyush Puri (notification permissions + receivers)
 ```
 
@@ -205,3 +211,6 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | SettingsProvider mutators are void (not async) for Switch.onChanged compatibility; async notification calls use .then() | Piyush Puri | 13 Apr 2026 |
 | AndroidManifest.xml not yet present (no platform dirs committed); RECEIVE_BOOT_COMPLETED + POST_NOTIFICATIONS permissions needed when developer runs flutter create --platforms android,ios | Piyush Puri | 13 Apr 2026 |
 | Platform dirs generated via flutter create --platforms android,ios; AndroidManifest patched with notification permissions + receivers; app ready for flutter run or flutter build apk | Piyush Puri | 13 Apr 2026 |
+| google_fonts ^6.2.1 added to pubspec.yaml; Fraunces used for displaySerif() (emotional moments, scores, hero titles), Inter used for all UI copy (labels, body, buttons) | Rajat Mahajan | 13 Apr 2026 |
+| BottomNavBar "Insights" tab renamed to "Patterns" (matches redesign prompt spec); uses Icons.insights_rounded not Icons.bar_chart | Rajat Mahajan | 13 Apr 2026 |
+| moodColor(int score) static helper added to AppTheme — preferred over direct moodColors[] map access in all new/redesigned code | Rajat Mahajan | 13 Apr 2026 |

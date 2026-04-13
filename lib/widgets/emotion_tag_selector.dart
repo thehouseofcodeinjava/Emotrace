@@ -1,8 +1,8 @@
 // Widget: EmotionTagSelector | Author: Rajat Mahajan | Date: 11 Apr 2026
-// Full impl: Piyush Puri | Date: 13 Apr 2026
-// FilterChip emotion picker — max 5 selections, teal highlight
+// Redesign: Session 7 (13 Apr 2026) — pill chips, softer states.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../config/constants.dart';
 import '../config/theme.dart';
@@ -24,48 +24,80 @@ class EmotionTagSelector extends StatelessWidget {
     final atLimit = selectedEmotions.length >= _maxSelections;
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       children: AppConstants.emotions.map((emotion) {
         final isSelected = selectedEmotions.contains(emotion);
         final isDisabled = atLimit && !isSelected;
 
-        return FilterChip(
-          label: Text(emotion),
+        return _EmotionPill(
+          label: emotion,
           selected: isSelected,
-          onSelected: isDisabled
+          disabled: isDisabled,
+          onTap: isDisabled
               ? null
-              : (selected) {
+              : () {
                   final updated = List<String>.from(selectedEmotions);
-                  if (selected) {
-                    updated.add(emotion);
-                  } else {
+                  if (isSelected) {
                     updated.remove(emotion);
+                  } else {
+                    updated.add(emotion);
                   }
                   onChanged(updated);
                 },
-          selectedColor: AppTheme.teal.withValues(alpha: 0.20),
-          checkmarkColor: AppTheme.teal,
-          showCheckmark: true,
-          labelStyle: TextStyle(
-            color: isSelected
-                ? AppTheme.teal
-                : isDisabled
-                    ? AppTheme.textSecondary.withValues(alpha: 0.4)
-                    : AppTheme.textSecondary,
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
-          backgroundColor: AppTheme.cardBackground,
-          disabledColor: AppTheme.cardBackground,
-          side: BorderSide(
-            color: isSelected
-                ? AppTheme.teal.withValues(alpha: 0.7)
-                : Colors.transparent,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         );
       }).toList(),
+    );
+  }
+}
+
+class _EmotionPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback? onTap;
+
+  const _EmotionPill({
+    required this.label,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected
+        ? AppTheme.tealLight.withValues(alpha: 0.14)
+        : AppTheme.cardBackground;
+    final border = selected
+        ? AppTheme.tealLight.withValues(alpha: 0.6)
+        : AppTheme.outlineVariant;
+    final textColor = selected
+        ? AppTheme.tealLight
+        : disabled
+            ? AppTheme.textTertiary
+            : AppTheme.textSecondary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: border, width: 1),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            color: textColor,
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ),
     );
   }
 }
