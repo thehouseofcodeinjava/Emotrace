@@ -1,8 +1,10 @@
 // Screen: CalendarScreen | Author: Piyush Puri | Date: 11 Apr 2026
 // Updated: 12 Apr 2026 — wired StreakCounter widget, added pull-to-refresh
+// Redesign: Session 7 (13 Apr 2026) — Fraunces hero title, microLabel, outlineVariant card
 // Design reference: design/emotional_calendar/code.html
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
@@ -57,12 +59,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 SliverAppBar(
                   pinned: true,
                   backgroundColor: AppTheme.background,
-                  title: const Text(
+                  title: Text(
                     'EMOTRACE',
-                    style: TextStyle(
-                      color: AppTheme.teal,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
+                    style: AppTheme.displaySerif(
+                      size: 22,
+                      color: AppTheme.tealLight,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -76,31 +77,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ── Header ────────────────────────────────────────
-                        const Text(
+                        Text(
                           'HISTORICAL OVERVIEW',
-                          style: TextStyle(
-                            color: AppTheme.tealLight,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.5,
-                          ),
+                          style: AppTheme.microLabel(color: AppTheme.tealLight),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                        Text(
                           'Your Emotional\nCalendar',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
+                          style: AppTheme.displaySerif(
+                            size: 36,
+                            weight: FontWeight.w500,
                             letterSpacing: -1,
                             height: 1.1,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Scroll to see past 90 days',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 14),
+                        Text(
+                          'Every day you showed up — it\'s all here.',
+                          style: GoogleFonts.inter(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -116,7 +113,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: AppTheme.cardBackground,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                            border: Border.all(color: AppTheme.outlineVariant),
                           ),
                           child: CalendarHeatmap(entries: entries),
                         ),
@@ -209,10 +207,11 @@ class _TrendsSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   '$monthName Trends',
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     color: AppTheme.textPrimary,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -220,10 +219,13 @@ class _TrendsSummaryCard extends StatelessWidget {
                   diff != null
                       ? 'You\'ve been ${diff.abs().toStringAsFixed(0)}% '
                           '${diff > 0 ? 'more positive' : 'less positive'} '
-                          'this month compared to last month. Keep tracking!'
-                      : 'Keep logging to see monthly comparisons.',
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 13),
+                          'than last month. Keep it up.'
+                      : 'Log a few more days to unlock your monthly comparison.',
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    height: 1.45,
+                  ),
                 ),
               ],
             ),

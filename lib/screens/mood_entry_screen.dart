@@ -1,8 +1,10 @@
 // Screen: MoodEntryScreen | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Full impl: Piyush Puri | Date: 13 Apr 2026
+// Redesign: Session 7 (13 Apr 2026) — Fraunces header, microLabel sections, premium save CTA
 // Mood entry flow — scale selector + emotion tags + notes + save
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
@@ -81,19 +83,22 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Section header ──────────────────────────────
-              const Text(
-                'How are you feeling?',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
+              Text(
+                'How are you\nfeeling?',
+                style: AppTheme.displaySerif(
+                  size: 30,
+                  weight: FontWeight.w500,
                   letterSpacing: -0.5,
+                  height: 1.15,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Rate your current mood from 1 (terrible) to 10 (amazing)',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              const SizedBox(height: 6),
+              Text(
+                'Be honest — this is just for you.',
+                style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
               ),
 
               const SizedBox(height: 28),
@@ -107,19 +112,14 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
               const SizedBox(height: 32),
 
               // ── Emotion tags ────────────────────────────────
-              const Text(
-                'DESCRIBE IT',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              Text('DESCRIBE IT', style: AppTheme.microLabel()),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Pick up to 5 emotions',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 12),
               EmotionTagSelector(
@@ -131,41 +131,41 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
               const SizedBox(height: 28),
 
               // ── Notes ───────────────────────────────────────
-              const Text(
-                'NOTES',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              Text('NOTES', style: AppTheme.microLabel()),
               const SizedBox(height: 12),
               TextField(
                 controller: _notesController,
                 maxLines: 4,
                 maxLength: AppConstants.maxNotesLength,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                style: GoogleFonts.inter(
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
                 decoration: InputDecoration(
-                  hintText: 'Anything on your mind? (optional)',
-                  hintStyle: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  hintText: 'What\'s on your mind? (optional)',
+                  hintStyle: GoogleFonts.inter(
+                    color: AppTheme.textTertiary,
                     fontSize: 14,
                   ),
                   filled: true,
                   fillColor: AppTheme.cardBackground,
-                  counterStyle: const TextStyle(
-                    color: AppTheme.textSecondary,
+                  counterStyle: GoogleFonts.inter(
+                    color: AppTheme.textTertiary,
                     fontSize: 11,
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                    borderSide: BorderSide(color: AppTheme.outlineVariant),
+                  ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                    borderSide: BorderSide(color: AppTheme.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                     borderSide: const BorderSide(
-                      color: AppTheme.teal,
+                      color: AppTheme.tealLight,
                       width: 1.5,
                     ),
                   ),
@@ -190,11 +190,12 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
                             color: Color(0xFF003827),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Save Mood',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
                           ),
                         ),
                 ),
