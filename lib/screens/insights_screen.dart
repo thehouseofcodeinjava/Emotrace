@@ -1,11 +1,9 @@
 // Screen: InsightsScreen | Author: Piyush Puri | Date: 13 Apr 2026
 // Updated: 13 Apr 2026 — share PDF action added to SliverAppBar
-// Redesign: Session 7 (13 Apr 2026) — Fraunces hero score, microLabel, Inter section headers
 // Design reference: design/insights/code.html
 // Features: stability score, 30-day mood trend chart, best/worst day pattern cards, emotion frequency bars.
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
@@ -95,14 +93,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
               SliverAppBar(
                 pinned: true,
                 backgroundColor: AppTheme.background,
-                title: Text(
-                  'EMOTRACE',
-                  style: AppTheme.displaySerif(
-                    size: 22,
-                    color: AppTheme.tealLight,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                title: const Text('EMOTRACE',
+                    style: TextStyle(
+                      color: AppTheme.teal,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    )),
                 elevation: 0,
                 actions: [
                   _isSharing
@@ -188,16 +185,22 @@ class _HeroStats extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'MONTHLY OVERVIEW',
-          style: AppTheme.microLabel(color: AppTheme.tealLight),
+          style: TextStyle(
+            color: AppTheme.tealLight,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
         ),
         const SizedBox(height: 4),
-        Text(
+        const Text(
           'Your Patterns',
-          style: AppTheme.displaySerif(
-            size: 36,
-            weight: FontWeight.w500,
+          style: TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
             letterSpacing: -1,
           ),
         ),
@@ -211,9 +214,10 @@ class _HeroStats extends StatelessWidget {
                   : avg > 0
                       ? '${avg.toStringAsFixed(1)}/10'
                       : '—',
-              style: AppTheme.displaySerif(
-                size: 64,
+              style: const TextStyle(
                 color: AppTheme.tealLight,
+                fontSize: 64,
+                fontWeight: FontWeight.w900,
                 letterSpacing: -2,
                 height: 1,
               ),
@@ -224,9 +228,14 @@ class _HeroStats extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'STABILITY SCORE',
-                    style: AppTheme.microLabel(),
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                   Row(
                     children: [
@@ -235,10 +244,8 @@ class _HeroStats extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         'Avg mood: ${avg.toStringAsFixed(1)}',
-                        style: GoogleFonts.inter(
-                          color: AppTheme.tealLight,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(
+                            color: AppTheme.tealLight, fontSize: 12),
                       ),
                     ],
                   ),
@@ -323,21 +330,18 @@ class _PatternCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             headline,
-            style: GoogleFonts.inter(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
               height: 1.3,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             subtext,
-            style: GoogleFonts.inter(
-              color: AppTheme.textSecondary,
-              fontSize: 11,
-              height: 1.45,
-            ),
+            style: const TextStyle(
+                color: AppTheme.textSecondary, fontSize: 11, height: 1.4),
           ),
         ],
       ),
@@ -437,19 +441,20 @@ class _EmptyInsightsState extends StatelessWidget {
             const Icon(Icons.auto_graph_outlined,
                 size: 56, color: AppTheme.textSecondary),
             const SizedBox(height: 20),
-            Text(
+            const Text(
               'Your Patterns',
-              style: AppTheme.displaySerif(size: 24, weight: FontWeight.w500),
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
               'Log ${3 - entryCount} more mood${3 - entryCount == 1 ? '' : 's'} to unlock insights.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: const TextStyle(
+                  color: AppTheme.textSecondary, fontSize: 14, height: 1.5),
             ),
           ],
         ),
@@ -473,17 +478,20 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: const TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.bold,
           ),
         ),
         if (label.isNotEmpty)
           Text(
             label.toUpperCase(),
-            style: AppTheme.microLabel(),
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 9,
+              letterSpacing: 1,
+            ),
           ),
       ],
     );

@@ -1,9 +1,7 @@
-// Widget: MoodChart — 30-day mood trend line chart
-// Redesign: Session 7 (13 Apr 2026) — gradient stroke, soft fill, ghost empty state.
+// Widget: MoodChart — 30-day mood trend line chart | Author: Piyush Puri | Date: 11 Apr 2026
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../config/theme.dart';
@@ -16,26 +14,25 @@ class MoodChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entries.length < 2) {
-      return _EmptyState(count: entries.length);
+    if (entries.isEmpty) {
+      return _emptyState();
     }
 
+    // Build spots: x = days ago (0 = today), y = moodScore
     final now = DateTime.now();
     final spots = <FlSpot>[];
     for (final e in entries) {
       final daysAgo = now.difference(e.createdAt).inDays.toDouble();
-      if (daysAgo > 29) continue;
       spots.add(FlSpot(29 - daysAgo.clamp(0, 29), e.moodScore.toDouble()));
     }
     spots.sort((a, b) => a.x.compareTo(b.x));
 
     return Container(
-      height: 220,
-      padding: const EdgeInsets.only(top: 20, right: 16, bottom: 8, left: 4),
+      height: 200,
+      padding: const EdgeInsets.only(top: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: LineChart(
         LineChartData(
@@ -44,9 +41,8 @@ class MoodChart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            horizontalInterval: 3,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: Colors.white.withValues(alpha: 0.04),
+            getDrawingHorizontalLine: (_) => const FlLine(
+              color: Color(0x0FFFFFFF),
               strokeWidth: 1,
             ),
           ),
@@ -55,23 +51,23 @@ class MoodChart extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 28,
-                interval: 3,
-                getTitlesWidget: (value, _) => Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Text(
-                    value.toInt().toString(),
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textTertiary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
+                reservedSize: 24,
+                interval: 5,
+                getTitlesWidget: (value, _) => Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 10,
                   ),
                 ),
               ),
             ),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -81,13 +77,12 @@ class MoodChart extends StatelessWidget {
                   final date = DateTime.now()
                       .subtract(Duration(days: (29 - value).round()));
                   return Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       DateFormat('d MMM').format(date),
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textTertiary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 9,
                       ),
                     ),
                   );
@@ -99,17 +94,15 @@ class MoodChart extends StatelessWidget {
             LineChartBarData(
               spots: spots,
               isCurved: true,
-              curveSmoothness: 0.38,
-              gradient: LinearGradient(
-                colors: [AppTheme.moodColor(1), AppTheme.moodColor(10)],
-              ),
-              barWidth: 3,
+              curveSmoothness: 0.35,
+              color: AppTheme.tealLight,
+              barWidth: 2.5,
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
-                  radius: 4,
-                  color: AppTheme.moodColor(spot.y.round()),
-                  strokeWidth: 2,
+                getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+                  radius: 3,
+                  color: AppTheme.tealLight,
+                  strokeWidth: 1.5,
                   strokeColor: AppTheme.background,
                 ),
               ),
@@ -119,8 +112,8 @@ class MoodChart extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.tealLight.withValues(alpha: 0.25),
-                    AppTheme.tealLight.withValues(alpha: 0.02),
+                    AppTheme.tealLight.withValues(alpha: 0.3),
+                    AppTheme.tealLight.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -128,14 +121,13 @@ class MoodChart extends StatelessWidget {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => AppTheme.cardHigh,
-              tooltipRoundedRadius: 10,
+              getTooltipColor: (_) => AppTheme.surfaceVariant,
               getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
                 return LineTooltipItem(
                   '${s.y.toInt()}/10',
-                  GoogleFonts.inter(
-                    color: AppTheme.moodColor(s.y.round()),
-                    fontWeight: FontWeight.w700,
+                  const TextStyle(
+                    color: AppTheme.tealLight,
+                    fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 );
@@ -146,76 +138,27 @@ class MoodChart extends StatelessWidget {
       ),
     );
   }
-}
 
-class _EmptyState extends StatelessWidget {
-  final int count;
-  const _EmptyState({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _emptyState() {
     return Container(
-      height: 180,
-      padding: const EdgeInsets.all(24),
+      height: 160,
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Stack(
-        children: [
-          // Ghost line suggestion
-          CustomPaint(
-            size: Size.infinite,
-            painter: _GhostLinePainter(),
-          ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Your trend will unfold here',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  count == 0
-                      ? 'Log your first mood to begin'
-                      : 'One more entry and the line appears',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textTertiary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+      child: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bar_chart_outlined, color: AppTheme.textSecondary, size: 32),
+            SizedBox(height: 8),
+            Text(
+              'Log 3+ moods to see your trend',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-class _GhostLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    final path = Path();
-    final h = size.height;
-    final w = size.width;
-    path.moveTo(0, h * 0.65);
-    path.cubicTo(w * 0.25, h * 0.35, w * 0.5, h * 0.75, w * 0.75, h * 0.4);
-    path.cubicTo(w * 0.85, h * 0.25, w * 0.95, h * 0.5, w, h * 0.35);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -1,10 +1,8 @@
 // Screen: HomeScreen | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Full impl: Piyush Puri | Date: 13 Apr 2026
-// Redesign: Session 7 (13 Apr 2026) — Fraunces greeting, serif score, microLabel sections
 // Dashboard — greeting, today's mood card, streak counter, recent entries, FAB
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -104,15 +102,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   SliverAppBar _buildAppBar() {
-    return SliverAppBar(
+    return const SliverAppBar(
       floating: true,
       snap: true,
       backgroundColor: AppTheme.background,
       title: Text(
         AppConstants.appName,
-        style: AppTheme.displaySerif(
-          size: 22,
-          color: AppTheme.tealLight,
+        style: TextStyle(
+          color: AppTheme.teal,
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
           letterSpacing: -0.5,
         ),
       ),
@@ -136,20 +135,17 @@ class _GreetingSection extends StatelessWidget {
       children: [
         Text(
           greeting,
-          style: AppTheme.displaySerif(
-            size: 32,
-            weight: FontWeight.w500,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            height: 1.15,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           dateStr,
-          style: GoogleFonts.inter(
-            color: AppTheme.textSecondary,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         ),
       ],
     );
@@ -193,9 +189,9 @@ class _EmptyMoodCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.tealLight.withValues(alpha: 0.2),
+            color: AppTheme.teal.withValues(alpha: 0.25),
             width: 1,
           ),
         ),
@@ -203,9 +199,9 @@ class _EmptyMoodCard extends StatelessWidget {
           children: [
             const Text('😶', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
-            Text(
-              'Nothing logged yet today',
-              style: GoogleFonts.inter(
+            const Text(
+              'No mood logged today',
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -213,8 +209,8 @@ class _EmptyMoodCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Takes 30 seconds — how are you feeling?',
-              style: GoogleFonts.inter(
+              'Tap to check in — takes 30 seconds',
+              style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 13,
               ),
@@ -232,7 +228,7 @@ class _FilledMoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final moodColor = AppTheme.moodColor(entry.moodScore);
+    final moodColor = moodColors[entry.moodScore] ?? AppTheme.teal;
     final emoji = AppConstants.moodEmojis[entry.moodScore] ?? '';
     final label = AppConstants.moodLabels[entry.moodScore] ?? '';
 
@@ -241,9 +237,9 @@ class _FilledMoodCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: moodColor.withValues(alpha: 0.3),
+          color: moodColor.withValues(alpha: 0.35),
           width: 1,
         ),
       ),
@@ -255,19 +251,32 @@ class _FilledMoodCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('TODAY', style: AppTheme.microLabel()),
+                Row(
+                  children: [
+                    const Text(
+                      'TODAY',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${entry.moodScore}/10',
-                  style: AppTheme.displaySerif(
-                    size: 32,
+                  style: TextStyle(
                     color: moodColor,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -1,
                   ),
                 ),
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -277,7 +286,7 @@ class _FilledMoodCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     entry.emotionTags.join(' · '),
-                    style: GoogleFonts.inter(
+                    style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
                     ),
@@ -306,7 +315,15 @@ class _RecentEntriesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('RECENT ENTRIES', style: AppTheme.microLabel()),
+        const Text(
+          'RECENT ENTRIES',
+          style: TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 10),
         if (entries.isEmpty)
           Container(
@@ -314,19 +331,15 @@ class _RecentEntriesSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 28),
             decoration: BoxDecoration(
               color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              border: Border.all(color: AppTheme.outlineVariant),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
+            child: const Column(
               children: [
-                const Text('📋', style: TextStyle(fontSize: 28)),
-                const SizedBox(height: 8),
+                Text('📋', style: TextStyle(fontSize: 28)),
+                SizedBox(height: 8),
                 Text(
-                  'Your story starts with the first entry.',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
+                  'No entries yet — start logging!',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                 ),
               ],
             ),

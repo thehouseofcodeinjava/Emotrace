@@ -1,8 +1,8 @@
 // Widget: MoodEntryCard | Author: Rajat Mahajan | Date: 11 Apr 2026
-// Redesign: Session 7 (13 Apr 2026) — softer card, gradient accent, serif score.
+// Full impl: Piyush Puri | Date: 13 Apr 2026
+// Summary card for recent entries — mood color circle, relative date, emotions
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../config/constants.dart';
 import '../config/theme.dart';
@@ -21,90 +21,74 @@ class MoodEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final moodColor = AppTheme.moodColor(entry.moodScore);
+    final moodColor = moodColors[entry.moodScore] ?? AppTheme.teal;
     final emoji = AppConstants.moodEmojis[entry.moodScore] ?? '';
     final label = AppConstants.moodLabels[entry.moodScore] ?? '';
     final dateLabel = AppDateUtils.relativeLabel(entry.createdAt);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: moodColor.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: ListTile(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: AppTheme.cardBackground,
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            border: Border.all(color: AppTheme.outlineVariant),
+            color: moodColor.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
           ),
-          child: Row(
-            children: [
-              // Gradient wash circle
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      moodColor.withValues(alpha: 0.35),
-                      moodColor.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dateLabel,
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      entry.emotionTags.isEmpty
-                          ? label
-                          : entry.emotionTags.join(' · '),
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '${entry.moodScore}',
-                style: AppTheme.displaySerif(
-                  size: 24,
-                  color: moodColor,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              Text(
-                '/10',
-                style: GoogleFonts.inter(
-                  color: AppTheme.textTertiary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          child: Center(
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 22),
+            ),
           ),
+        ),
+        title: Row(
+          children: [
+            Text(
+              dateLabel,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${entry.moodScore}/10',
+              style: TextStyle(
+                color: moodColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Text(
+            entry.emotionTags.isEmpty ? label : entry.emotionTags.join(' · '),
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppTheme.textSecondary,
+          size: 18,
         ),
       ),
     );

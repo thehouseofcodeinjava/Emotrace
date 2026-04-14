@@ -3,10 +3,8 @@
 // Features: month navigation, tap-to-view entry details, color legend, entry count.
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../config/constants.dart';
 import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
 import '../utils/color_utils.dart';
@@ -126,7 +124,11 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             const SizedBox(width: 8),
             Text(
               monthLabel,
-              style: AppTheme.displaySerif(size: 22, weight: FontWeight.w500),
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(width: 8),
             IconButton(
@@ -144,17 +146,16 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
         // ── Weekday labels ──────────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) {
+          children: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) {
             return SizedBox(
-              width: 34,
+              width: 32,
               child: Center(
                 child: Text(
                   d,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.textTertiary,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -181,23 +182,22 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
         // ── Total entries count ─────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.cardHigh,
+            color: AppTheme.surfaceVariant,
             borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: AppTheme.outlineVariant),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.auto_awesome_outlined,
+              const Icon(Icons.storage_rounded,
                   size: 14, color: AppTheme.tealLight),
               const SizedBox(width: 6),
               Text(
-                '${widget.entries.length} entries so far',
-                style: GoogleFonts.inter(
+                'Total entries: ${widget.entries.length}',
+                style: const TextStyle(
                   color: AppTheme.textPrimary,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -210,55 +210,42 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
   Widget _buildCell(DateTime? day) {
     if (day == null) {
-      return const SizedBox(width: 34, height: 34);
+      return const SizedBox(width: 32, height: 32);
     }
 
     final key = _dayKey(day);
     final entry = _entryMap[key];
     final isToday = AppDateUtils.isToday(day);
-    final hasEntry = entry != null;
 
-    final cellColor = hasEntry
-        ? AppTheme.moodColor(entry.moodScore)
-        : AppTheme.surfaceContainer;
+    Color cellColor;
+    if (entry != null) {
+      cellColor = AppColorUtils.getMoodColor(entry.moodScore);
+    } else {
+      cellColor = AppTheme.surfaceVariant;
+    }
 
     return GestureDetector(
-      onTap: hasEntry ? () => _showEntryDetails(context, entry) : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        width: 34,
-        height: 34,
+      onTap: entry != null ? () => _showEntryDetails(context, entry) : null,
+      child: Container(
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: hasEntry ? cellColor : AppTheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(8),
+          color: cellColor.withValues(alpha: entry != null ? 1.0 : 0.4),
+          borderRadius: BorderRadius.circular(6),
           border: isToday
               ? Border.all(color: AppTheme.tealLight, width: 1.5)
-              : Border.all(
-                  color: hasEntry
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : AppTheme.outlineVariant,
-                  width: 0.8,
-                ),
-          boxShadow: hasEntry
-              ? [
-                  BoxShadow(
-                    color: cellColor.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    spreadRadius: -1,
-                  ),
-                ]
               : null,
         ),
         child: day.day == 1
             ? Center(
                 child: Text(
                   '${day.day}',
-                  style: GoogleFonts.inter(
-                    color: hasEntry
-                        ? Colors.white.withValues(alpha: 0.92)
-                        : AppTheme.textTertiary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+                  style: TextStyle(
+                    color: entry != null
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : AppTheme.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               )
@@ -379,11 +366,11 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
   Widget _buildLegend() {
     final items = [
-      ('1-2', AppTheme.moodColor(2)),
-      ('3-4', AppTheme.moodColor(4)),
-      ('5-6', AppTheme.moodColor(6)),
-      ('7-8', AppTheme.moodColor(8)),
-      ('9-10', AppTheme.moodColor(10)),
+      ('1–2', const Color(0xFFE63946)),
+      ('3–4', const Color(0xFFFF9800)),
+      ('5–6', const Color(0xFFFFC107)),
+      ('7–8', const Color(0xFF47F3BB)),
+      ('9–10', const Color(0xFF06D6A0)),
     ];
 
     return Wrap(
@@ -394,20 +381,19 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 12,
-              height: 12,
+              width: 10,
+              height: 10,
               decoration: BoxDecoration(
                 color: item.$2,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Text(
               item.$1,
-              style: GoogleFonts.inter(
-                color: AppTheme.textTertiary,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
                 fontSize: 10,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ],

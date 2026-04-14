@@ -1,10 +1,8 @@
 // Screen: SettingsScreen | Author: Piyush Puri | Date: 13 Apr 2026
 // Full UI implementation — Appearance, Notifications, Data, About sections
-// Redesign: Session 7 (13 Apr 2026) — microLabel section headers, tealLight accents
 // Replaces Rajat Mahajan's shell (11 Apr 2026)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
@@ -53,10 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Settings',
-          style: AppTheme.displaySerif(size: 20, weight: FontWeight.w500),
-        ),
+        title: const Text('Settings'),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
@@ -270,7 +265,15 @@ class _SectionCard extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(label, style: AppTheme.microLabel(color: AppTheme.tealLight)),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.teal,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
         ),
         Container(
           decoration: BoxDecoration(
@@ -320,7 +323,7 @@ class _SettingsTile extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: const TextStyle(
           color: AppTheme.textPrimary,
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -328,11 +331,7 @@ class _SettingsTile extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.inter(
-          color: AppTheme.textSecondary,
-          fontSize: 12,
-          height: 1.4,
-        ),
+        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
       ),
       trailing: trailing,
     );
