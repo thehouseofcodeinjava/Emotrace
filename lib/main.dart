@@ -1,7 +1,5 @@
 // Screen: App Entry Point | Author: Rajat Mahajan | Date: 11 Apr 2026
-// Updated: Piyush Puri | Date: 13 Apr 2026
-// Wired: DatabaseService.init, NotificationService.init, SettingsProvider.loadSettings,
-// named routes via AppRoutes.
+// Updated: Piyush Puri | Date: 15 Apr 2026 — wired EmotracBottomNavBar
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

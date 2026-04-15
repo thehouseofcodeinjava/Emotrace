@@ -3,17 +3,17 @@
 # READ THIS FIRST at the start of every session.
 # UPDATE THIS LAST before every push.
 
-## Last Session
-- Date: 13 Apr 2026
-- Author: Rajat Mahajan
-- Branch: feature/mood_to_tracker_1
-- Summary: Session 7 (UI Redesign) — Full premium redesign of all 5 screens + all 7 widgets + main.dart nav. Added google_fonts ^6.2.1 (Inter + Fraunces). Rewrote theme.dart: layered dark surfaces (#0A0E14→#1E2630), mood-mapped gradient palette (red→amber→teal 10 steps), displaySerif()/microLabel()/moodColor() helpers, radiusSm/Md/Lg/Xl tokens. Updated constants.dart: warm mood labels ("Rough day" → "On top of the world"). Redesigned all widgets: gradient slider MoodScaleWidget, pill EmotionTagSelector, pluralization-fixed StreakCounter, serif-score MoodEntryCard, ghost-line MoodChart, pill-indicator BottomNavBar (renamed Insights→Patterns), CalendarHeatmap color system + glow cells. Redesigned all 5 screens: Fraunces headings, microLabel section labels, warm micro-copy throughout. Replaced stock BottomNavigationBar in main.dart with EmotracBottomNavBar widget.
+## Last Session — Session 7 (Sanctuary UI Redesign + App Icon)
+- Date: 15 Apr 2026
+- Author: Piyush Puri
+- Branch: feature/mood_to_tracker_2
+- Summary: Full Sanctuary editorial dark theme redesign across all 5 screens + 7 widgets (Tasks 3–16 of 2026-04-14-sanctuary-ui-redesign plan). Added google_fonts (Newsreader serif + Manrope sans). New AppTheme: deep forest green #0b1513 bg, gold #e9c176 primary, 15 new text style helpers (headlineSerif, displaySerifItalic, labelCaps, etc.), moodColorForScore() helper, legacy aliases kept. HomeScreen: editorial hero header (greeting/"You"/date), streak card, bento grid (_VibeCard 2/3 + _MoodSphereCard 1/3), forest.png background image in CurrentResonance vibe card with mood-tinted gradient overlay, Recent Echoes section, gold FAB bottom-right. MoodEntryScreen: glow sphere (200px RadialGradient, ambient halo), 10-bar MoodScaleWidget, emotion icon GridView (2-col, 16 icons), reflections textarea with animated edit icon. CalendarScreen: editorial header, stat cards row (streak + completion%), heatmap card, insight card with longest streak + total entries. InsightsScreen: bento (stability card with gold left border + MoodChart 2/3), pattern grid (_PatternCard), emotion frequency bars (gold for top). SettingsScreen: editorial sections, _SanctuaryToggle (AnimatedContainer gold gradient), _SectionCard, _SettingsTile. Widgets: EmotracBottomNavBar (BackdropFilter frosted glass + gold active pill), MoodEntryCard (56x56 square thumbnail), StreakCounter (gold fire icon + LinearProgressIndicator). MoodChart: gold gradient line, no grid. CalendarHeatmap: 5-band Sanctuary colors, AspectRatio 1:1 cells, gold today ring, note dots. Forest image: assets/images/forest.png copied from design/stitch_daily_mood_tracker/home_dashboard_1/. App icon: flutter_launcher_icons v0.14.4 used to generate Android + iOS icons from app_icon.jpeg. flutter analyze lib/: No issues found.
 
-## Previous Last Session (Session 5/6 — Piyush Puri)
+## Session 5 (beta completion)
 - Date: 13 Apr 2026
 - Author: Piyush Puri
 - Branch: feature/mood_to_tracker_2
-- Summary: Session 5 — Added packages: timezone, flutter_timezone, pdf, printing. Created SettingsService (DB read/write). Rewrote SettingsProvider with loadSettings() persistence + notification scheduling. Rewrote NotificationService: full daily reminder via zonedSchedule + DateTimeComponents.time. Wired DB init + NotificationService.init() + AppRoutes.routes in main.dart. Created PdfService (buildHistoryPdf + buildInsightsPdf, ASCII-only); 4 unit tests pass. Session 6 — Generated android/ios platform dirs, patched AndroidManifest for notifications.
+- Summary: Added packages: timezone, flutter_timezone, pdf, printing. Created SettingsService (DB read/write). Rewrote SettingsProvider with loadSettings() persistence + notification scheduling via toggleReminder/updateReminderTime (void for Switch compat, async via .then()). Rewrote NotificationService: full daily reminder via zonedSchedule + DateTimeComponents.time + AndroidScheduleMode.inexact. Wired DatabaseService.init() + NotificationService.init() + AppRoutes.routes in main.dart. Created PdfService (buildHistoryPdf + buildInsightsPdf, ASCII-only for Helvetica compat); 4 unit tests pass. Wired Export Mood History tile in SettingsScreen (StatefulWidget, _isExporting guard, Printing.sharePdf). Wired Share icon in InsightsScreen SliverAppBar (_isSharing guard, Printing.sharePdf). Fixed analyze: missing uiLocalNotificationDateInterpretation arg, removed unused constants.dart import in pdf_service. flutter analyze: No issues found. flutter test: 4/4 pass.
 
 ## Session 6 — Platform Setup
 - Date: 13 Apr 2026
@@ -27,11 +27,11 @@
 
 | File | What it does | Author | Date completed |
 |------|-------------|--------|----------------|
-| lib/config/theme.dart | AppTheme premium design system — layered surfaces, 10-step mood palette, displaySerif/microLabel/moodColor helpers, radius tokens | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/config/constants.dart | All app constants — emotions, warm mood labels, emojis, motivations | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/config/theme.dart | AppTheme Sanctuary dark theme — bg #0b1513, gold #e9c176, 15 text helpers, moodColorForScore(), legacy aliases | Piyush Puri | 15 Apr 2026 |
+| lib/config/constants.dart | Sanctuary mood labels (Depleted→Luminous), 16-emotion list, streakGoal=10, moodEmojis | Piyush Puri | 15 Apr 2026 |
 | lib/config/routes.dart | AppRoutes named route map | Rajat Mahajan (Piyush recreated) | 11 Apr 2026 |
 | pubspec.yaml | Flutter project config with all dependencies | Piyush Puri | 11 Apr 2026 |
-| lib/main.dart | App entry point, MultiProvider, MainNavigation — replaced stock BottomNavigationBar with EmotracBottomNavBar widget | Rajat Mahajan / Piyush Puri (redesign Session 7) | 13 Apr 2026 |
+| lib/main.dart | App entry point, MultiProvider, EmotracBottomNavBar wired, DatabaseService.init() | Piyush Puri | 15 Apr 2026 |
 | lib/models/user_model.dart | User class — fromMap/toMap, matches users table | Rajat Mahajan | 11 Apr 2026 |
 | lib/models/mood_entry_model.dart | MoodEntry class — fromMap/toMap, matches mood_entries table | Rajat Mahajan | 11 Apr 2026 |
 | lib/models/emotion_model.dart | Emotion class — fromMap/toMap, matches emotion_tags table | Rajat Mahajan | 11 Apr 2026 |
@@ -47,18 +47,20 @@
 | lib/providers/insights_provider.dart | InsightsProvider — calculateInsights (wired to InsightService) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/auth_provider.dart | AuthProvider stub — login/logout (Month 2) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/settings_provider.dart | SettingsProvider FULL — loadSettings from DB, persist on change, wire NotificationService scheduling; void mutators for Switch compat | Piyush Puri | 13 Apr 2026 |
-| lib/screens/home_screen.dart | HomeScreen FULL — Fraunces greeting, serif today's score, microLabel sections, warm empty state copy | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/screens/mood_entry_screen.dart | MoodEntryScreen FULL — Fraunces "How are you feeling?" header, microLabel section labels, outlineVariant notes field | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/screens/calendar_screen.dart | CalendarScreen FULL — Fraunces hero title, microLabel header, warm subtitle copy, outlineVariant heatmap card | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/screens/insights_screen.dart | InsightsScreen FULL — Fraunces stability score, microLabel sections, Inter section headers, warm pattern card copy | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/screens/settings_screen.dart | SettingsScreen FULL — Fraunces AppBar title, microLabel section headers, Inter tile text | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/mood_scale_widget.dart | MoodScaleWidget FULL — gradient slider (replaces circles), hero emoji glow, Fraunces serif score, drag interaction | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/emotion_tag_selector.dart | EmotionTagSelector FULL — custom pill chips, animated selection, max 5 cap | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/calendar_heatmap.dart | CalendarHeatmap FULL — moodColor() palette, glow box shadows, outlineVariant borders, Fraunces month label, redesigned legend | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/streak_counter.dart | StreakCounter FULL — pluralization fix ("1 day" not "1 days"), Fraunces longest score, microLabel header | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/mood_chart.dart | MoodChart FULL — gradient stroke, mood-colored dots, ghost-line empty state via CustomPainter | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/bottom_nav_bar.dart | EmotracBottomNavBar FULL — custom pill-indicator bar, renamed Insights→Patterns, animated tealLight active state | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
-| lib/widgets/mood_entry_card.dart | MoodEntryCard FULL — RadialGradient emoji circle, Fraunces serif score, outlineVariant border | Rajat Mahajan (redesign Session 7) | 13 Apr 2026 |
+| lib/screens/home_screen.dart | Sanctuary redesign: editorial hero, bento grid (_VibeCard + _MoodSphereCard), forest.png bg, gold FAB, Recent Echoes | Piyush Puri | 15 Apr 2026 |
+| lib/screens/mood_entry_screen.dart | Sanctuary redesign: glow sphere, 10-bar scale, icon GridView chips, animated reflections field, gold save button | Piyush Puri | 15 Apr 2026 |
+| lib/screens/calendar_screen.dart | Sanctuary redesign: stat cards row (streak + completion%), heatmap card, insight card | Piyush Puri | 15 Apr 2026 |
+| lib/screens/insights_screen.dart | Sanctuary redesign: bento (stability card + MoodChart), pattern grid, emotion frequency bars | Piyush Puri | 15 Apr 2026 |
+| lib/screens/settings_screen.dart | Sanctuary redesign: editorial sections, _SanctuaryToggle (gold gradient), _SectionCard, _SettingsTile | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/mood_scale_widget.dart | Sanctuary redesign: 10 vertical bars, gold gradient selected bar, glow shadow | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/emotion_tag_selector.dart | Sanctuary redesign: 2-col icon GridView, 16 emotion icons, gold selected state | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/calendar_heatmap.dart | Sanctuary redesign: 5-band colors, AspectRatio 1:1 cells, gold today ring, note dots, new legend | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/streak_counter.dart | Sanctuary redesign: 48x48 gold fire icon container, LinearProgressIndicator toward streakGoal | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/mood_chart.dart | Sanctuary redesign: gold gradient line, no grid, tooltip uses surfaceContainerHighest | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/bottom_nav_bar.dart | Sanctuary redesign: BackdropFilter frosted glass, gold LinearGradient active pill, AnimatedContainer | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/mood_entry_card.dart | Sanctuary redesign: 56x56 square thumbnail, Newsreader headlineSerifMedium, moodColorForScore() | Piyush Puri | 15 Apr 2026 |
+| assets/images/forest.png | Forest background for _VibeCard — copied from design/stitch_daily_mood_tracker/home_dashboard_1/ | Piyush Puri | 15 Apr 2026 |
+| pubspec.yaml | Added google_fonts, flutter_launcher_icons; assets: assets/images/forest.png declared | Piyush Puri | 15 Apr 2026 |
 | lib/utils/date_utils.dart | AppDateUtils — formatDate, relativeLabel, calculateCurrentStreak | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/color_utils.dart | AppColorUtils — getMoodColor, getMoodLabel, getMoodEmoji | Rajat Mahajan | 11 Apr 2026 |
 | lib/utils/validation_utils.dart | ValidationUtils — validateMoodScore, validateNotes, validateEmail | Rajat Mahajan | 11 Apr 2026 |
@@ -86,6 +88,16 @@
 - [x] Build full MoodEntryScreen: MoodScaleWidget + EmotionTagSelector + notes + save — DONE Piyush Puri ✓ 13 Apr 2026
 - [x] Implement MoodProvider.addMoodEntry with full DatabaseService integration — was already implemented by Rajat ✓ 11 Apr 2026
 - [x] Test: save mood entry → appears on home screen — flow fully wired: MoodEntryScreen → MoodProvider.addMoodEntry() → loadEntries() on pop → HomeScreen updates ✓
+
+### 🔔 For Rajat Mahajan — IMPORTANT SESSION 7 CHANGES (15 Apr 2026)
+All 5 screens and 7 widgets have been completely redesigned under the "Sanctuary" editorial dark theme. When you pick up your branch:
+- 💡 `AppTheme` has 15 new text style helpers (`headlineSerif`, `displaySerifItalic`, `labelCaps`, etc.) — use these instead of raw TextStyle
+- 💡 `AppTheme.moodColorForScore(int score)` replaces `AppColorUtils.getMoodColor()` — use the new helper in any new widgets
+- 💡 `AppConstants.moodLabels`, `AppConstants.moodEmojis`, and `AppConstants.emotions` have been updated to Sanctuary vocabulary (e.g. "Luminous" not "Ecstatic")
+- 💡 `EmotracBottomNavBar` in `lib/widgets/bottom_nav_bar.dart` is now frosted-glass + gold — no changes needed, but if you rebuild nav logic reference this file
+- 💡 `assets/images/forest.png` is declared in pubspec.yaml and available for other screens/widgets if needed
+- 💡 `flutter_launcher_icons` added as dev dependency — app icon (app_icon.jpeg) already generated for Android + iOS. No action needed from you.
+- ⚠️ `color_utils.dart` still exists but is no longer used by any Piyush-owned file. If your screens still import it, it's fine to keep using it — just note `moodColorForScore()` is the new canonical method.
 
 ### High Priority (Week 3 — Piyush Puri)
 - [x] Implement SettingsScreen full UI (theme toggle, reminder time picker) — Piyush Puri ✓ 12 Apr 2026
@@ -123,10 +135,10 @@
 
 ```
 lib/
-  main.dart                                         DONE FULL — Rajat Mahajan / Piyush Puri
+  main.dart                                         DONE FULL — Piyush Puri (EmotracBottomNavBar wired, 15 Apr)
   config/
-    theme.dart                                      DONE — Rajat Mahajan (Piyush recreated)
-    constants.dart                                  DONE — Rajat Mahajan (Piyush recreated)
+    theme.dart                                      DONE FULL — Piyush Puri (Sanctuary redesign, 15 Apr)
+    constants.dart                                  DONE FULL — Piyush Puri (Sanctuary labels + 16 emotions, 15 Apr)
     routes.dart                                     DONE — Rajat Mahajan (Piyush recreated)
   models/
     user_model.dart                                 DONE — Rajat Mahajan
@@ -147,24 +159,27 @@ lib/
     auth_provider.dart                              DONE stub — Rajat Mahajan
     settings_provider.dart                          DONE FULL — Piyush Puri
   screens/
-    home_screen.dart                                DONE FULL — Rajat Mahajan / Piyush Puri
-    mood_entry_screen.dart                          DONE FULL — Rajat Mahajan / Piyush Puri
-    calendar_screen.dart                            DONE FULL — Piyush Puri
-    insights_screen.dart                            DONE FULL — Piyush Puri (Share PDF 13 Apr)
-    settings_screen.dart                            DONE FULL — Piyush Puri (Export PDF 13 Apr)
+    home_screen.dart                                DONE FULL — Piyush Puri (Sanctuary, forest bg, 15 Apr)
+    mood_entry_screen.dart                          DONE FULL — Piyush Puri (Sanctuary glow sphere, 15 Apr)
+    calendar_screen.dart                            DONE FULL — Piyush Puri (Sanctuary stat cards, 15 Apr)
+    insights_screen.dart                            DONE FULL — Piyush Puri (Sanctuary bento, 15 Apr)
+    settings_screen.dart                            DONE FULL — Piyush Puri (Sanctuary toggle, 15 Apr)
   widgets/
-    mood_scale_widget.dart                          DONE FULL — Rajat Mahajan / Piyush Puri
-    emotion_tag_selector.dart                       DONE FULL — Rajat Mahajan / Piyush Puri
-    calendar_heatmap.dart                           DONE FULL — Piyush Puri (bug fixed 13 Apr)
-    streak_counter.dart                             DONE FULL — Piyush Puri
-    mood_chart.dart                                 DONE FULL — Piyush Puri
-    bottom_nav_bar.dart                             DONE FULL — Rajat Mahajan / Piyush Puri
-    mood_entry_card.dart                            DONE FULL — Rajat Mahajan / Piyush Puri
+    mood_scale_widget.dart                          DONE FULL — Piyush Puri (Sanctuary 10-bar, 15 Apr)
+    emotion_tag_selector.dart                       DONE FULL — Piyush Puri (Sanctuary icon grid, 15 Apr)
+    calendar_heatmap.dart                           DONE FULL — Piyush Puri (Sanctuary 5-band, 15 Apr)
+    streak_counter.dart                             DONE FULL — Piyush Puri (Sanctuary gold fire, 15 Apr)
+    mood_chart.dart                                 DONE FULL — Piyush Puri (Sanctuary gold line, 15 Apr)
+    bottom_nav_bar.dart                             DONE FULL — Piyush Puri (Sanctuary frosted glass, 15 Apr)
+    mood_entry_card.dart                            DONE FULL — Piyush Puri (Sanctuary square thumb, 15 Apr)
   utils/
     date_utils.dart                                 DONE — Rajat Mahajan
-    color_utils.dart                                DONE — Rajat Mahajan
+    color_utils.dart                                DONE — Rajat Mahajan (legacy, use AppTheme.moodColorForScore())
     validation_utils.dart                           DONE — Rajat Mahajan
-pubspec.yaml                                        DONE — Piyush Puri (google_fonts added Session 7)
+assets/
+  images/
+    forest.png                                      DONE — Piyush Puri (vibe card bg, 15 Apr)
+pubspec.yaml                                        DONE — Piyush Puri (google_fonts + flutter_launcher_icons, 15 Apr)
 android/app/src/main/AndroidManifest.xml            DONE — Piyush Puri (notification permissions + receivers)
 ```
 
@@ -192,6 +207,9 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | b75bc25 | feat: PdfService — buildHistoryPdf + buildInsightsPdf; 4 tests passing | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
 | 14822fc | feat: wire PDF export in SettingsScreen — Export Mood History tile | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
 | 7f53586 | feat: wire PDF share in InsightsScreen — share icon in SliverAppBar | feature/mood_to_tracker_2 | Piyush Puri | 13 Apr 2026 |
+| 38d5bab | feat: Sanctuary theme tokens — gold palette + Newsreader/Manrope helpers | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
+| dab435b | feat: Sanctuary UI redesign — all 5 screens + 7 widgets complete | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
+| 61a1d8d | feat: add forest background image to Current Resonance vibe card | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 
 ---
 
@@ -211,6 +229,6 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | SettingsProvider mutators are void (not async) for Switch.onChanged compatibility; async notification calls use .then() | Piyush Puri | 13 Apr 2026 |
 | AndroidManifest.xml not yet present (no platform dirs committed); RECEIVE_BOOT_COMPLETED + POST_NOTIFICATIONS permissions needed when developer runs flutter create --platforms android,ios | Piyush Puri | 13 Apr 2026 |
 | Platform dirs generated via flutter create --platforms android,ios; AndroidManifest patched with notification permissions + receivers; app ready for flutter run or flutter build apk | Piyush Puri | 13 Apr 2026 |
-| google_fonts ^6.2.1 added to pubspec.yaml; Fraunces used for displaySerif() (emotional moments, scores, hero titles), Inter used for all UI copy (labels, body, buttons) | Rajat Mahajan | 13 Apr 2026 |
-| BottomNavBar "Insights" tab renamed to "Patterns" (matches redesign prompt spec); uses Icons.insights_rounded not Icons.bar_chart | Rajat Mahajan | 13 Apr 2026 |
-| moodColor(int score) static helper added to AppTheme — preferred over direct moodColors[] map access in all new/redesigned code | Rajat Mahajan | 13 Apr 2026 |
+| Sanctuary editorial dark theme adopted for all 5 screens + 7 widgets — deep forest green #0b1513 bg + gold #e9c176 primary; Newsreader (serif) + Manrope (sans-serif) via google_fonts | Piyush Puri | 15 Apr 2026 |
+| App icon generated via flutter_launcher_icons 0.14.4 from app_icon.jpeg — covers all Android mipmap densities + iOS | Piyush Puri | 15 Apr 2026 |
+| moodColorForScore() in AppTheme is the new canonical mood color lookup; color_utils.dart is legacy (kept for compatibility) | Piyush Puri | 15 Apr 2026 |

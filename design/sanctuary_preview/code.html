@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMOTRACE — Sanctuary UI Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & base ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0b1513;
+    --surface:    #0b1513;
+    --sc:         #18221f;
+    --sc-low:     #141e1b;
+    --sc-high:    #222c29;
+    --sc-highest: #2d3734;
+    --primary:    #e9c176;
+    --primary-c:  #c5a059;
+    --on-primary: #412d00;
+    --on-pf:      #261900;
+    --secondary:  #b5ccc1;
+    --sec-c:      #394d45;
+    --text:       #dae5e0;
+    --text-sub:   #d1c5b4;
+    --outline:    #9a8f80;
+    --outline-v:  #4e4639;
+    --error:      #93000a;
+    --mood-1: #93000a; --mood-2: #93000a;
+    --mood-3: #c5a059; --mood-4: #c5a059;
+    --mood-5: #b5ccc1; --mood-6: #b5ccc1;
+    --mood-7: #394d45; --mood-8: #394d45;
+    --mood-9: #21342d; --mood-10: #21342d;
+  }
+
+  html, body {
+    background: #080e0c;
+    min-height: 100vh;
+    font-family: 'Manrope', sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  /* ── Preview header ─────────────────────────────────────────── */
+  .preview-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .preview-header h1 {
+    font-family: 'Newsreader', serif;
+    font-size: 14px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-sub);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .preview-header h2 {
+    font-family: 'Newsreader', serif;
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .preview-header p {
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 400;
+  }
+
+  /* ── Screen switcher tabs ──────────────────────────────────── */
+  .screen-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .screen-tab {
+    background: var(--sc-low);
+    border: 1px solid var(--outline-v);
+    color: var(--text-sub);
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .screen-tab:hover { border-color: var(--outline); color: var(--text); }
+  .screen-tab.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    border-color: transparent;
+    color: var(--on-primary);
+  }
+
+  /* ── Phone frame ────────────────────────────────────────────── */
+  .phone-frame {
+    width: 393px;
+    height: 852px;
+    background: var(--bg);
+    border-radius: 50px;
+    border: 2px solid #2a3530;
+    box-shadow:
+      0 0 0 6px #0d1410,
+      0 60px 120px rgba(0,0,0,0.7),
+      inset 0 0 80px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  /* Notch */
+  .phone-notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 34px;
+    background: #0d1410;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .notch-cam { width: 10px; height: 10px; border-radius: 50%; background: #1a2420; }
+  .notch-speaker { width: 40px; height: 4px; border-radius: 99px; background: #1a2420; }
+
+  /* Status bar */
+  .status-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    z-index: 99;
+  }
+  .status-right { display: flex; gap: 6px; align-items: center; }
+  .status-icon { font-size: 12px; }
+
+  /* Screen content area */
+  .screen {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: none;
+    flex-direction: column;
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.active { display: flex; }
+
+  /* ── Bottom nav bar ─────────────────────────────────────────── */
+  .bottom-nav {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 82px;
+    background: rgba(11,21,19,0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -20px 40px rgba(11,21,19,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 10px 16px 20px;
+    z-index: 50;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgba(197,160,89,0.5);
+  }
+  .nav-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    color: var(--on-primary);
+  }
+  .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  /* ── Shared components ──────────────────────────────────────── */
+  .app-bar {
+    padding: 52px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 40;
+  }
+  .app-bar-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--sc-highest);
+    border: 1px solid var(--outline-v);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .app-bar-title {
+    font-family: 'Newsreader', serif;
+    font-size: 22px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--primary);
+    flex: 1;
+  }
+  .app-bar-action {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+  }
+
+  .label-caps {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--text-sub);
+    text-transform: uppercase;
+  }
+  .gold-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(24,34,31,0.7);
+    border: 1px solid rgba(233,193,118,0.2);
+    border-radius: 99px;
+    padding: 4px 10px;
+  }
+  .gold-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 6px var(--primary);
+  }
+  .gold-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--on-primary);
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border: none;
+  }
+  .card {
+    background: var(--sc-low);
+    border-radius: 16px;
+  }
+  .card-high { background: var(--sc-high); border-radius: 16px; }
+
+  /* ── HOME SCREEN ────────────────────────────────────────────── */
+  #screen-home .content {
+    padding: 0 20px 100px;
+    flex: 1;
+  }
+  .hero-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .hero-text { flex: 1; }
+  .hero-text .greeting {
+    font-family: 'Newsreader', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .hero-text .name {
+    font-family: 'Newsreader', serif;
+    font-size: 34px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .hero-text .date-str {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 6px;
+  }
+  .streak-badge {
+    background: var(--sc-low);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .streak-fire {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .streak-num {
+    font-family: 'Newsreader', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+  }
+
+  /* Bento grid */
+  .bento-grid {
+    display: flex;
+    gap: 12px;
+    height: 300px;
+    margin-bottom: 28px;
+  }
+  .vibe-card {
+    flex: 2;
+    border-radius: 24px;
+    background: linear-gradient(160deg, rgba(57,77,69,0.25) 0%, var(--sc-low) 100%);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .vibe-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(11,21,19,0.85) 0%, transparent 55%);
+    border-radius: 24px;
+  }
+  .vibe-card > * { position: relative; z-index: 1; }
+  .vibe-card .score-big {
+    font-family: 'Newsreader', serif;
+    font-size: 68px;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1;
+    margin-top: auto;
+  }
+  .vibe-card .score-label {
+    font-family: 'Newsreader', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+
+  .sphere-card {
+    flex: 1;
+    background: var(--sc-high);
+    border-radius: 24px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .sphere-card .title {
+    font-family: 'Newsreader', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .orb-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .orb {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(233,193,118,0.35), transparent 70%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .orb::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,193,118,0.08), transparent 70%);
+  }
+  .orb-icon { font-size: 32px; filter: drop-shadow(0 0 8px rgba(233,193,118,0.5)); }
+  .mini-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 36px;
+  }
+  .mini-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: rgba(233,193,118,0.25);
+    transition: height 0.3s;
+  }
+  .mini-bar.lit { background: var(--primary); opacity: 0.8; }
+
+  /* Recent echoes */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Newsreader', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .section-link { font-size: 12px; color: var(--primary); font-weight: 600; }
+
+  .echo-card {
+    background: var(--sc-low);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+    border: 0.5px solid rgba(78,70,57,0.3);
+  }
+  .echo-thumb {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Newsreader', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+  .echo-meta { flex: 1; min-width: 0; }
+  .echo-date { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--text-sub); text-transform: uppercase; }
+  .echo-title {
+    font-family: 'Newsreader', serif;
+    font-size: 15px; font-weight: 500;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .echo-emotions { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+  .echo-score {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* Gold FAB */
+  .fab {
+    position: absolute;
+    right: 24px;
+    bottom: 96px;
+    width: 58px; height: 58px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(233,193,118,0.3);
+    cursor: pointer;
+    z-index: 45;
+    font-size: 26px;
+    color: var(--on-primary);
+    font-weight: 300;
+  }
+
+  /* ── MOOD ENTRY SCREEN ──────────────────────────────────────── */
+  #screen-mood .content {
+    padding: 0 20px 100px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .entry-header {
+    padding: 52px 20px 16px;
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+  }
+  .close-btn {
+    width: 34px; height: 34px;
+    background: var(--sc-low);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-sub);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .entry-title {
+    flex: 1;
+    text-align: center;
+    font-family: 'Newsreader', serif;
+    font-size: 20px; font-weight: 500;
+    color: var(--text);
+  }
+
+  /* Mood sphere */
+  .sphere-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 0;
+    position: relative;
+  }
+  .sphere-halo {
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,193,118,0.1), transparent 70%);
+  }
+  .mood-sphere {
+    width: 190px; height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #e9c176, #c5a059 45%, #0b1513 100%);
+    box-shadow: 0 0 60px rgba(233,193,118,0.22), 0 0 0 1px rgba(233,193,118,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+  .sphere-score {
+    font-family: 'Newsreader', serif;
+    font-size: 58px; font-weight: 700;
+    color: var(--on-pf);
+    line-height: 1;
+  }
+  .sphere-label {
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.15em;
+    color: rgba(38,25,0,0.65);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Scale bars */
+  .scale-card {
+    background: var(--sc-low);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .scale-endpoints {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .scale-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 68px;
+  }
+  .scale-bar {
+    flex: 1;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: rgba(45,55,52,0.7);
+  }
+  .scale-bar.sel {
+    background: linear-gradient(to top, var(--primary-c), var(--primary));
+    box-shadow: 0 -6px 16px rgba(233,193,118,0.35);
+  }
+  .scale-label-row {
+    text-align: center;
+    margin-top: 14px;
+    font-family: 'Newsreader', serif;
+    font-size: 16px; font-weight: 600;
+    color: var(--primary);
+  }
+
+  /* Emotion chips */
+  .emotions-section { margin-bottom: 20px; }
+  .emotions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .emotion-chip {
+    background: var(--sc-low);
+    border: 0.5px solid rgba(78,70,57,0.3);
+    border-radius: 12px;
+    padding: 0 12px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .emotion-chip.sel {
+    background: var(--sec-c);
+    border-color: rgba(233,193,118,0.6);
+    box-shadow: 0 0 8px rgba(233,193,118,0.12);
+  }
+  .emotion-chip svg { width: 15px; height: 15px; opacity: 0.7; }
+  .emotion-chip.sel svg { opacity: 1; color: var(--primary); }
+  .emotion-chip span { font-size: 12px; color: var(--text-sub); }
+  .emotion-chip.sel span { color: var(--primary); font-weight: 700; }
+
+  /* Reflections */
+  .reflections-field {
+    background: rgba(45,55,52,0.4);
+    border-radius: 24px;
+    padding: 18px;
+    min-height: 100px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(78,70,57,0.2);
+    font-size: 13px;
+    color: rgba(209,197,180,0.4);
+    font-family: 'Manrope', sans-serif;
+    position: relative;
+  }
+  .reflections-icon {
+    position: absolute;
+    bottom: 14px; right: 16px;
+    color: var(--primary);
+    opacity: 0.6;
+    font-size: 18px;
+  }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    height: 54px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--on-primary);
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    margin-bottom: 8px;
+  }
+
+  /* ── CALENDAR SCREEN ────────────────────────────────────────── */
+  #screen-calendar .content { padding: 0 20px 100px; flex: 1; }
+
+  .editorial-header { margin-bottom: 20px; }
+  .editorial-header .line1 {
+    font-family: 'Newsreader', serif;
+    font-size: 30px; font-weight: 600;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .editorial-header .line2 {
+    font-family: 'Newsreader', serif;
+    font-size: 30px; font-weight: 500; font-style: italic;
+    color: var(--primary);
+    line-height: 1.1;
+  }
+  .editorial-header .sub {
+    font-size: 13px; color: var(--text-sub);
+    margin-top: 6px;
+  }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    flex: 1;
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .stat-card .stat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; color: var(--text-sub); text-transform: uppercase; margin-bottom: 6px; }
+  .stat-card .stat-val {
+    font-family: 'Newsreader', serif;
+    font-size: 20px; font-weight: 600;
+    color: var(--primary);
+  }
+
+  .heatmap-card {
+    background: var(--sc-low);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .nav-chevron {
+    width: 34px; height: 34px;
+    background: var(--sc-highest);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px; color: var(--text-sub);
+  }
+  .month-label {
+    font-family: 'Newsreader', serif;
+    font-size: 20px; font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .day-headers {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    margin-bottom: 8px;
+  }
+  .day-hdr { text-align: center; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: rgba(209,197,180,0.45); text-transform: uppercase; padding: 3px 0; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 4px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: rgba(45,55,52,0.4);
+    border: 0.5px solid rgba(78,70,57,0.2);
+    position: relative;
+    transition: transform 0.1s;
+  }
+  .cal-cell:hover { transform: scale(1.1); }
+  .cal-cell.today {
+    border: 1.5px solid var(--primary);
+    box-shadow: 0 0 6px rgba(233,193,118,0.3);
+  }
+  .cal-cell.has-note::after {
+    content: '';
+    position: absolute;
+    bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.75);
+  }
+
+  /* ── INSIGHTS SCREEN ────────────────────────────────────────── */
+  #screen-insights .content { padding: 0 20px 100px; flex: 1; }
+
+  .insights-bento {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stability-card {
+    flex: 1;
+    background: var(--sc-low);
+    border-radius: 16px;
+    padding: 16px;
+    border-left: 3px solid rgba(233,193,118,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stability-score {
+    font-family: 'Newsreader', serif;
+    font-size: 44px; font-weight: 600;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .stability-denom { font-size: 14px; color: var(--text-sub); }
+
+  .chart-card {
+    flex: 2;
+    background: var(--sc-low);
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .chart-title {
+    font-family: 'Newsreader', serif;
+    font-size: 16px; font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .chart-sub { font-size: 10px; color: var(--text-sub); margin-bottom: 10px; }
+  .chart-area {
+    height: 90px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-svg { width: 100%; height: 100%; }
+
+  .pattern-grid {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .pattern-card {
+    flex: 1;
+    background: var(--sc-low);
+    border-radius: 16px;
+    padding: 16px;
+    border: 0.5px solid rgba(78,70,57,0.25);
+  }
+  .pattern-icon { font-size: 24px; margin-bottom: 10px; }
+  .pattern-headline {
+    font-family: 'Newsreader', serif;
+    font-size: 14px; font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .pattern-body { font-size: 11px; color: var(--text-sub); line-height: 1.45; }
+
+  .emotion-freq-card {
+    background: var(--sc-low);
+    border-radius: 16px;
+    padding: 18px;
+    border: 0.5px solid rgba(78,70,57,0.2);
+  }
+  .freq-row { margin-bottom: 14px; }
+  .freq-labels { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .freq-name { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  .freq-track {
+    height: 5px;
+    background: var(--sc-highest);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .freq-fill { height: 100%; border-radius: 99px; }
+
+  /* ── SETTINGS SCREEN ────────────────────────────────────────── */
+  #screen-settings .content { padding: 0 20px 100px; flex: 1; }
+
+  .settings-hero { padding: 52px 20px 24px; background: var(--bg); }
+  .settings-title {
+    font-family: 'Newsreader', serif;
+    font-size: 42px; font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .settings-sub { font-size: 13px; color: var(--text-sub); }
+
+  .settings-section { margin-bottom: 24px; padding: 0 20px; }
+  .settings-section-title {
+    font-family: 'Newsreader', serif;
+    font-size: 20px; font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 12px;
+  }
+  .settings-card {
+    background: var(--sc-low);
+    border-radius: 16px;
+    border: 0.5px solid rgba(78,70,57,0.4);
+    overflow: hidden;
+  }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .settings-row + .settings-row {
+    border-top: 0.5px solid rgba(78,70,57,0.3);
+  }
+  .settings-icon {
+    width: 34px; height: 34px;
+    background: rgba(233,193,118,0.1);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 17px;
+  }
+  .settings-text { flex: 1; min-width: 0; }
+  .settings-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .settings-desc { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+  .settings-danger .settings-label { color: #ff8a80; }
+
+  /* Custom toggle */
+  .toggle {
+    width: 46px; height: 24px;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .toggle.on {
+    background: linear-gradient(135deg, var(--primary), var(--primary-c));
+  }
+  .toggle.off { background: var(--sc-highest); }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    transition: left 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .toggle.on .toggle-thumb { left: 24px; background: var(--on-primary); }
+  .toggle.off .toggle-thumb { left: 2px; background: var(--outline); }
+
+  .settings-footer {
+    padding: 8px 20px 16px;
+    text-align: center;
+    font-family: 'Newsreader', serif;
+    font-size: 15px; font-weight: 400; font-style: italic;
+    color: var(--primary);
+  }
+
+  /* ── Animations ─────────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .screen.active > * {
+    animation: fadeUp 0.35s ease forwards;
+  }
+  .screen.active > *:nth-child(2) { animation-delay: 0.05s; }
+  .screen.active > *:nth-child(3) { animation-delay: 0.10s; }
+
+  @keyframes spherePulse {
+    0%, 100% { box-shadow: 0 0 60px rgba(233,193,118,0.22), 0 0 0 1px rgba(233,193,118,0.1); }
+    50%       { box-shadow: 0 0 80px rgba(233,193,118,0.35), 0 0 0 1px rgba(233,193,118,0.18); }
+  }
+  .mood-sphere { animation: spherePulse 3s ease-in-out infinite; }
+
+  @keyframes dotPulse {
+    0%, 100% { box-shadow: 0 0 6px var(--primary); opacity: 1; }
+    50%       { box-shadow: 0 0 14px var(--primary); opacity: 0.6; }
+  }
+  .gold-dot { animation: dotPulse 2s ease-in-out infinite; }
+
+  /* ── Outer layout caption ───────────────────────────────────── */
+  .screen-label {
+    margin-top: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-header">
+  <h1>UI Preview — Sanctuary Theme</h1>
+  <h2>EMOTRACE</h2>
+  <p>5 screens · Deep forest green · Gold editorial · Newsreader + Manrope</p>
+</div>
+
+<div class="screen-tabs">
+  <button class="screen-tab active" onclick="switchScreen('home',this)">Home</button>
+  <button class="screen-tab" onclick="switchScreen('mood',this)">Mood Entry</button>
+  <button class="screen-tab" onclick="switchScreen('calendar',this)">Calendar</button>
+  <button class="screen-tab" onclick="switchScreen('insights',this)">Insights</button>
+  <button class="screen-tab" onclick="switchScreen('settings',this)">Settings</button>
+</div>
+
+<div class="phone-frame">
+  <div class="phone-notch">
+    <div class="notch-cam"></div>
+    <div class="notch-speaker"></div>
+    <div class="notch-cam"></div>
+  </div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-right">
+      <span class="status-icon">▲▲▲</span>
+      <span class="status-icon">▊</span>
+    </div>
+  </div>
+
+  <!-- ── HOME ──────────────────────────────────────────────────── -->
+  <div class="screen active" id="screen-home">
+    <div class="app-bar">
+      <div class="app-bar-avatar">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--text-sub)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <span class="app-bar-title">EMOTRACE</span>
+      <div class="app-bar-action">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Hero row -->
+      <div class="hero-row">
+        <div class="hero-text">
+          <div class="greeting">Good evening,</div>
+          <div class="name">You</div>
+          <div class="date-str">Tuesday, 15 April 2026</div>
+        </div>
+        <div class="streak-badge">
+          <div class="streak-fire">🔥</div>
+          <div class="streak-num">7</div>
+          <div class="label-caps" style="font-size:8px">Days</div>
+        </div>
+      </div>
+
+      <!-- Bento grid -->
+      <div class="bento-grid">
+        <div class="vibe-card">
+          <div class="gold-pill">
+            <div class="gold-dot"></div>
+            <span class="label-caps" style="color:var(--primary);font-size:9px">Current Resonance</span>
+          </div>
+          <div class="score-big">7</div>
+          <div class="score-label">Balanced · 7/10</div>
+          <button class="gold-btn">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Check In
+          </button>
+        </div>
+        <div class="sphere-card">
+          <div class="title">Weekly<br>Sky</div>
+          <div class="orb-container">
+            <div class="orb"><span class="orb-icon">🌥</span></div>
+          </div>
+          <div class="mini-bars">
+            <div class="mini-bar" style="height:35%"></div>
+            <div class="mini-bar lit" style="height:55%"></div>
+            <div class="mini-bar" style="height:42%"></div>
+            <div class="mini-bar lit" style="height:70%"></div>
+            <div class="mini-bar lit" style="height:80%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Echoes -->
+      <div class="section-header">
+        <span class="section-title">Recent Echoes</span>
+        <span class="section-link">View All →</span>
+      </div>
+
+      <div class="echo-card">
+        <div class="echo-thumb" style="background:#394d45">7</div>
+        <div class="echo-meta">
+          <div class="echo-date">Today · 8:32 PM</div>
+          <div class="echo-title">Feeling present and calm</div>
+          <div class="echo-emotions">calm · grateful · focused</div>
+        </div>
+        <div class="echo-score" style="color:#394d45">7/10</div>
+      </div>
+
+      <div class="echo-card">
+        <div class="echo-thumb" style="background:#b5ccc1">6</div>
+        <div class="echo-meta">
+          <div class="echo-date">Yesterday · 9:10 PM</div>
+          <div class="echo-title">Long day, still okay</div>
+          <div class="echo-emotions">tired · steady</div>
+        </div>
+        <div class="echo-score" style="color:#b5ccc1">6/10</div>
+      </div>
+
+      <div class="echo-card">
+        <div class="echo-thumb" style="background:#21342d">9</div>
+        <div class="echo-meta">
+          <div class="echo-date">2 days ago</div>
+          <div class="echo-title">Great energy, inspired</div>
+          <div class="echo-emotions">inspired · energetic · happy</div>
+        </div>
+        <div class="echo-score" style="color:#c5a059">9/10</div>
+      </div>
+    </div>
+
+    <div class="fab">+</div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchScreen('home',null)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        HOME
+      </div>
+      <div class="nav-item" onclick="switchScreen('calendar',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('insights',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('settings',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MOOD ENTRY ─────────────────────────────────────────────── -->
+  <div class="screen" id="screen-mood">
+    <div class="entry-header">
+      <div class="close-btn">✕</div>
+      <div class="entry-title">How are you feeling?</div>
+      <div style="width:34px"></div>
+    </div>
+
+    <div class="content" style="padding:0 20px 40px; overflow-y:auto; scrollbar-width:none;">
+      <!-- Sphere -->
+      <div class="sphere-wrapper">
+        <div class="sphere-halo"></div>
+        <div class="mood-sphere" id="moodSphere">
+          <div class="sphere-score" id="sphereScore">7</div>
+          <div class="sphere-label" id="sphereLabel">BALANCED</div>
+        </div>
+      </div>
+
+      <!-- Scale bars -->
+      <div class="scale-card">
+        <div class="scale-endpoints">
+          <span class="label-caps">Tired</span>
+          <span class="label-caps">Radiant</span>
+        </div>
+        <div class="scale-bars" id="scaleBars">
+          <!-- generated by JS -->
+        </div>
+        <div class="scale-label-row" id="scaleLabelRow">Balanced</div>
+      </div>
+
+      <!-- Emotion chips -->
+      <div class="emotions-section">
+        <div class="label-caps">Refine Your State</div>
+        <div class="emotions-grid" id="emotionGrid">
+          <!-- generated by JS -->
+        </div>
+      </div>
+
+      <!-- Reflections -->
+      <div class="reflections-field">
+        Capture the texture of this moment...
+        <div class="reflections-icon">✏</div>
+      </div>
+
+      <!-- Save -->
+      <button class="save-btn">SAVE REFLECTION</button>
+    </div>
+  </div>
+
+  <!-- ── CALENDAR ───────────────────────────────────────────────── -->
+  <div class="screen" id="screen-calendar">
+    <div class="app-bar">
+      <div class="app-bar-avatar">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--text-sub)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <span class="app-bar-title">EMOTRACE</span>
+    </div>
+
+    <div class="content">
+      <div class="editorial-header">
+        <div class="line1">Your Emotional</div>
+        <div class="line2">Calendar</div>
+        <div class="sub">Your mood history at a glance</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card card">
+          <div class="stat-label">Current Streak</div>
+          <div class="stat-val">7 days 🔥</div>
+        </div>
+        <div class="stat-card card-high">
+          <div class="stat-label">Completion</div>
+          <div class="stat-val">47%</div>
+        </div>
+      </div>
+
+      <div class="heatmap-card">
+        <div class="month-nav">
+          <div class="nav-chevron">‹</div>
+          <div class="month-label">April 2026</div>
+          <div class="nav-chevron">›</div>
+        </div>
+        <div class="day-headers">
+          <div class="day-hdr">M</div><div class="day-hdr">T</div><div class="day-hdr">W</div>
+          <div class="day-hdr">T</div><div class="day-hdr">F</div><div class="day-hdr">S</div><div class="day-hdr">S</div>
+        </div>
+        <div class="cal-grid" id="calGrid">
+          <!-- generated by JS -->
+        </div>
+      </div>
+
+      <div class="card" style="padding:18px; border:0.5px solid rgba(78,70,57,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-family:'Newsreader',serif;font-size:18px;font-weight:500;color:var(--text)">Historical Peak</div>
+          <div style="width:38px;height:38px;background:rgba(233,193,118,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text-sub)">Longest streak</span>
+          <span style="font-size:12px;color:var(--primary);font-weight:700">12 days</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--text-sub)">Total entries</span>
+          <span style="font-size:12px;color:var(--primary);font-weight:700">47</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchScreen('home',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      </div>
+      <div class="nav-item active" onclick="switchScreen('calendar',null)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2"/><rect x="7" y="14" width="4" height="4" rx="1" fill="currentColor"/></svg>
+        CALENDAR
+      </div>
+      <div class="nav-item" onclick="switchScreen('insights',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('settings',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INSIGHTS ───────────────────────────────────────────────── -->
+  <div class="screen" id="screen-insights">
+    <div class="app-bar">
+      <div class="app-bar-avatar">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--text-sub)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <span class="app-bar-title">EMOTRACE</span>
+      <div class="app-bar-action" style="color:var(--text-sub)">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="editorial-header" style="margin-bottom:24px">
+        <div class="line1" style="font-size:32px">Your Patterns</div>
+        <div class="sub">last 30 days of reflection</div>
+      </div>
+
+      <!-- Bento: stability + chart -->
+      <div class="insights-bento">
+        <div class="stability-card">
+          <div class="label-caps" style="line-height:1.4">Stability<br>Score</div>
+          <div class="stability-score">7.4</div>
+          <div class="stability-denom">/10</div>
+          <div style="font-size:10px;color:var(--text-sub);margin-top:4px">Avg mood: 6.8</div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Mood Trend</div>
+          <div class="chart-sub">Daily average sentiment</div>
+          <div class="chart-area">
+            <svg class="chart-svg" viewBox="0 0 180 80" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#e9c176"/>
+                  <stop offset="100%" stop-color="#c5a059"/>
+                </linearGradient>
+                <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#e9c176" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#e9c176" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,55 C15,50 25,42 40,38 C55,34 65,52 80,45 C95,38 110,28 125,32 C140,36 155,22 180,18"
+                    fill="none" stroke="url(#goldLine)" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M0,55 C15,50 25,42 40,38 C55,34 65,52 80,45 C95,38 110,28 125,32 C140,36 155,22 180,18 L180,80 L0,80 Z"
+                    fill="url(#areaFill)"/>
+              <circle cx="180" cy="18" r="4" fill="#e9c176" filter="drop-shadow(0 0 4px #e9c176)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pattern cards -->
+      <div class="pattern-grid">
+        <div class="pattern-card">
+          <div class="pattern-icon">☀️</div>
+          <div class="pattern-headline">You feel better on Fridays</div>
+          <div class="pattern-body">Mood scores peak on Fridays. Lean into what makes this day great.</div>
+        </div>
+        <div class="pattern-card" style="background:var(--sc-high)">
+          <div class="pattern-icon">⚡</div>
+          <div class="pattern-headline">Watch out on Mondays</div>
+          <div class="pattern-body">Mondays show a consistent dip. Plan some self-care on these days.</div>
+        </div>
+      </div>
+
+      <!-- Emotion frequency -->
+      <div class="emotion-freq-card">
+        <div style="font-family:'Newsreader',serif;font-size:18px;font-weight:500;color:var(--text);margin-bottom:16px">Emotion Frequency</div>
+        <div class="freq-row">
+          <div class="freq-labels">
+            <span class="freq-name" style="color:var(--primary)">Calm</span>
+            <span class="freq-name" style="color:var(--primary)">14</span>
+          </div>
+          <div class="freq-track"><div class="freq-fill" style="width:100%;background:var(--primary)"></div></div>
+        </div>
+        <div class="freq-row">
+          <div class="freq-labels">
+            <span class="freq-name" style="color:var(--text-sub)">Grateful</span>
+            <span class="freq-name" style="color:var(--text-sub)">11</span>
+          </div>
+          <div class="freq-track"><div class="freq-fill" style="width:78%;background:var(--primary-c)"></div></div>
+        </div>
+        <div class="freq-row" style="margin-bottom:0">
+          <div class="freq-labels">
+            <span class="freq-name" style="color:var(--text-sub)">Focused</span>
+            <span class="freq-name" style="color:var(--text-sub)">9</span>
+          </div>
+          <div class="freq-track"><div class="freq-fill" style="width:64%;background:var(--primary-c)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchScreen('home',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('calendar',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div class="nav-item active" onclick="switchScreen('insights',null)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 16l4-4 4 4 4-8" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        INSIGHTS
+      </div>
+      <div class="nav-item" onclick="switchScreen('settings',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ───────────────────────────────────────────────── -->
+  <div class="screen" id="screen-settings">
+    <div class="settings-hero">
+      <div class="settings-title">Settings</div>
+      <div class="settings-sub">Curate your experience</div>
+    </div>
+
+    <div style="overflow-y:auto;flex:1;scrollbar-width:none;padding-bottom:100px">
+      <div class="settings-section">
+        <div class="settings-section-title">Appearance</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon">🌙</div>
+            <div class="settings-text">
+              <div class="settings-label">Dark Mode</div>
+              <div class="settings-desc">Only dark theme in this version</div>
+            </div>
+            <div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Notifications</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon">🔔</div>
+            <div class="settings-text">
+              <div class="settings-label">Daily Reminder</div>
+              <div class="settings-desc">Get a nudge to log your mood every day</div>
+            </div>
+            <div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-icon">⏰</div>
+            <div class="settings-text">
+              <div class="settings-label">Reminder Time</div>
+              <div class="settings-desc">9:00 PM</div>
+            </div>
+            <span style="color:var(--text-sub);font-size:18px">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Data & Privacy</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon">📥</div>
+            <div class="settings-text">
+              <div class="settings-label">Export Mood History</div>
+              <div class="settings-desc">Share all entries as a PDF report</div>
+            </div>
+            <span style="color:var(--text-sub);font-size:18px">›</span>
+          </div>
+          <div class="settings-row settings-danger">
+            <div class="settings-icon" style="background:rgba(255,138,128,0.1)">🗑</div>
+            <div class="settings-text">
+              <div class="settings-label">Clear All Data</div>
+              <div class="settings-desc">Permanently delete all mood entries</div>
+            </div>
+            <span style="color:var(--text-sub);font-size:18px">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">About</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-icon">ℹ️</div>
+            <div class="settings-text">
+              <div class="settings-label">EMOTRACE</div>
+              <div class="settings-desc">Version 1.0.0 — MVP</div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-icon">👥</div>
+            <div class="settings-text">
+              <div class="settings-label">Built by</div>
+              <div class="settings-desc">Rajat Mahajan & Piyush Puri</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-footer">Built by EMOTRACE</div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchScreen('home',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('calendar',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchScreen('insights',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
+      </div>
+      <div class="nav-item active" onclick="switchScreen('settings',null)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        SETTINGS
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="screen-label" id="screenLabel">Home Dashboard</div>
+
+<script>
+const screens = {
+  home:     { el: 'screen-home',     label: 'Home Dashboard' },
+  mood:     { el: 'screen-mood',     label: 'Mood Entry' },
+  calendar: { el: 'screen-calendar', label: 'Emotional Calendar' },
+  insights: { el: 'screen-insights', label: 'Patterns & Insights' },
+  settings: { el: 'screen-settings', label: 'Settings' },
+};
+
+function switchScreen(name, tabEl) {
+  Object.values(screens).forEach(s => {
+    document.getElementById(s.el).classList.remove('active');
+  });
+  document.getElementById(screens[name].el).classList.add('active');
+  document.getElementById('screenLabel').textContent = screens[name].label;
+
+  // Update top tabs
+  document.querySelectorAll('.screen-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+}
+
+/* ── Build scale bars ─────────────────────────────────────── */
+const barHeights = [32,38,44,50,56,50,44,56,50,64];
+const moodLabels = ['','Depleted','Heavy','Low','Unsettled','Steady','Decent','Balanced','Vibrant','Radiant','Luminous'];
+let selectedMood = 7;
+
+function buildBars() {
+  const container = document.getElementById('scaleBars');
+  if (!container) return;
+  container.innerHTML = '';
+  barHeights.forEach((h, i) => {
+    const mood = i + 1;
+    const bar = document.createElement('div');
+    bar.className = 'scale-bar' + (mood === selectedMood ? ' sel' : '');
+    bar.style.height = (mood === selectedMood ? h + 8 : h) + 'px';
+    bar.onclick = () => selectMood(mood);
+    container.appendChild(bar);
+  });
+  document.getElementById('scaleLabelRow').textContent = moodLabels[selectedMood];
+  document.getElementById('sphereScore').textContent = selectedMood;
+  document.getElementById('sphereLabel').textContent = moodLabels[selectedMood].toUpperCase();
+}
+
+function selectMood(mood) {
+  selectedMood = mood;
+  buildBars();
+}
+
+/* ── Build emotion chips ──────────────────────────────────── */
+const emotions = [
+  {label:'calm',      icon:'💧'},
+  {label:'focused',   icon:'🎯'},
+  {label:'inspired',  icon:'💡'},
+  {label:'grounded',  icon:'🌿'},
+  {label:'peaceful',  icon:'✨'},
+  {label:'energetic', icon:'⚡'},
+  {label:'anxious',   icon:'🌊'},
+  {label:'happy',     icon:'😊'},
+  {label:'sad',       icon:'😔'},
+  {label:'stressed',  icon:'🧠'},
+  {label:'grateful',  icon:'❤️'},
+  {label:'overwhelmed',icon:'☁️'},
+  {label:'angry',     icon:'🔥'},
+  {label:'excited',   icon:'⚡'},
+  {label:'tired',     icon:'🌙'},
+  {label:'content',   icon:'🌸'},
+];
+const selected = new Set(['calm','focused']);
+
+function buildEmotions() {
+  const grid = document.getElementById('emotionGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  emotions.forEach(e => {
+    const chip = document.createElement('div');
+    chip.className = 'emotion-chip' + (selected.has(e.label) ? ' sel' : '');
+    chip.innerHTML = `<span>${e.icon}</span><span>${e.label}</span>`;
+    chip.onclick = () => {
+      if (selected.has(e.label)) { selected.delete(e.label); }
+      else if (selected.size < 5) { selected.add(e.label); }
+      buildEmotions();
+    };
+    grid.appendChild(chip);
+  });
+}
+
+/* ── Build calendar grid ─────────────────────────────────── */
+const moodData = {
+  1:7, 2:6, 3:8, 4:5, 7:9, 8:7, 9:6, 10:7, 11:8, 12:7,
+  13:9, 14:8, 15:7, // today = 15
+};
+const moodColors = {
+  1:'#93000a',2:'#93000a',3:'#c5a059',4:'#c5a059',
+  5:'#b5ccc1',6:'#b5ccc1',7:'#394d45',8:'#394d45',
+  9:'#21342d',10:'#21342d'
+};
+
+function buildCalendar() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+  // April 2026: starts Wednesday (weekday 3, 0=Mon)
+  const startOffset = 2; // Mon=0, so Wed=2
+  const daysInMonth = 30;
+  const today = 15;
+  grid.innerHTML = '';
+
+  for (let i = 0; i < startOffset; i++) {
+    const blank = document.createElement('div');
+    blank.style.aspectRatio = '1';
+    grid.appendChild(blank);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if (d === today) cell.classList.add('today');
+    const score = moodData[d];
+    if (score) {
+      cell.style.background = moodColors[score];
+      if (moodData[d] >= 7 && d % 3 === 0) cell.classList.add('has-note');
+    }
+    grid.appendChild(cell);
+  }
+}
+
+/* ── Init ────────────────────────────────────────────────── */
+buildBars();
+buildEmotions();
+buildCalendar();
+</script>
+</body>
+</html>
