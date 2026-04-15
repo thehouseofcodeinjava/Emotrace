@@ -216,6 +216,7 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | 38d5bab | feat: Sanctuary theme tokens — gold palette + Newsreader/Manrope helpers | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 | dab435b | feat: Sanctuary UI redesign — all 5 screens + 7 widgets complete | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 | 61a1d8d | feat: add forest background image to Current Resonance vibe card | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
+| c63dd63 | fix: resolve 4 live bugs — calendar heatmap, insights layout, sphere gradient, notifications | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 
 ---
 
