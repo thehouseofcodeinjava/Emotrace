@@ -20,14 +20,20 @@ class MoodChart extends StatelessWidget {
       return _emptyState();
     }
 
-    // Build spots: x = days ago (0 = today), y = moodScore
+    // Group entries by day, average mood scores so same-day entries merge into one point
     final now = DateTime.now();
-    final spots = <FlSpot>[];
+    final Map<int, List<double>> byDay = {};
     for (final e in entries) {
-      final daysAgo = now.difference(e.createdAt).inDays.toDouble();
-      spots.add(FlSpot(29 - daysAgo.clamp(0, 29), e.moodScore.toDouble()));
+      final daysAgo = now.difference(e.createdAt).inDays;
+      if (daysAgo <= 29) {
+        byDay.putIfAbsent(daysAgo, () => []).add(e.moodScore.toDouble());
+      }
     }
-    spots.sort((a, b) => a.x.compareTo(b.x));
+    final spots = byDay.entries.map((entry) {
+      final avg = entry.value.reduce((a, b) => a + b) / entry.value.length;
+      return FlSpot((29 - entry.key).toDouble(), avg);
+    }).toList()
+      ..sort((a, b) => a.x.compareTo(b.x));
 
     return Container(
       height: 200,

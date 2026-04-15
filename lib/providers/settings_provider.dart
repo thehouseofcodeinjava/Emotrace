@@ -29,6 +29,10 @@ class SettingsProvider extends ChangeNotifier {
         _settings = saved;
         notifyListeners();
       }
+      // Schedule notification on app start if reminder is enabled.
+      if (_settings.dailyReminderEnabled) {
+        await NotificationService().scheduleDailyReminder(_settings.reminderTime);
+      }
     } catch (_) {
       // defaults already set — never crash on settings load
     }

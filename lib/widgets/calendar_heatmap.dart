@@ -214,15 +214,16 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
     return GestureDetector(
       onTap: entry != null ? () => _showEntryDetails(context, entry) : null,
-      child: AspectRatio(
-        aspectRatio: 1.0,
+      child: SizedBox(
+        width: 32,
+        height: 32,
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: entry != null
                 ? cellColor
                 : AppTheme.surfaceContainerHighest.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: isToday
                 ? Border.all(color: AppTheme.primary, width: 1.5)
                 : entry == null
@@ -233,19 +234,18 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           ),
           child: Stack(
             children: [
-              if (day.day == 1)
-                Center(
-                  child: Text(
-                    '${day.day}',
-                    style: TextStyle(
-                      color: entry != null
-                          ? Colors.white.withValues(alpha: 0.9)
-                          : AppTheme.textSecondary,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                    ),
+              Center(
+                child: Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    color: entry != null
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : AppTheme.textSecondary.withValues(alpha: 0.6),
+                    fontSize: 8,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+              ),
               // Note dot
               if (entry != null && entry.notes.isNotEmpty)
                 Positioned(

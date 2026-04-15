@@ -122,8 +122,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         const SizedBox(height: 24),
 
                         // Bento: stability card (1/3) + chart (2/3)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        IntrinsicHeight(
+                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Stability score card
                             Expanded(
@@ -178,6 +179,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               ),
                             ),
                           ],
+                         ),
                         ),
                         const SizedBox(height: 28),
 

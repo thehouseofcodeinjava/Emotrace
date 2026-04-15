@@ -3,6 +3,12 @@
 # READ THIS FIRST at the start of every session.
 # UPDATE THIS LAST before every push.
 
+## Last Session — Session 8 (Bug Fixes: Calendar, Insights, Sphere, Notifications)
+- Date: 15 Apr 2026
+- Author: Piyush Puri
+- Branch: feature/mood_to_tracker_2
+- Summary: Fixed 4 live bugs found from device screenshots. (1) CalendarHeatmap: cells were rendering at 0×0 — root cause: AspectRatio(1.0) inside Row > Column with no bounded dimension → replaced with SizedBox(32×32); also show day numbers on all cells (not just day 1). (2) InsightsScreen layout: stability score card was shorter than chart — fixed with IntrinsicHeight + CrossAxisAlignment.stretch so both columns fill equal height. MoodChart: all 3 entries from same day stacked at x=29 causing vertical "line" — fixed by grouping entries by day and averaging mood scores per day so same-day entries collapse into one point. (3) MoodEntryScreen sphere: RadialGradient third stop was AppTheme.background (dark green/black) → replaced with Color(0xFF7a5418) dark gold, sphere is now fully gold. (4) NotificationService: Android 13+ permission never explicitly requested → added requestNotificationsPermission() call in init(); SettingsProvider.loadSettings() never called scheduleDailyReminder() on app start even when reminder was enabled → added auto-schedule call after loading settings. flutter analyze: 0 errors.
+
 ## Last Session — Session 7 (Sanctuary UI Redesign + App Icon)
 - Date: 15 Apr 2026
 - Author: Piyush Puri
@@ -40,23 +46,23 @@
 | lib/services/mood_service.dart | MoodService — saveMoodEntry, getMoodEntries, getTodaysMood, getRecentEntries, delete | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/auth_service.dart | AuthService stub — login/logout/getCurrentUser (Month 2) | Rajat Mahajan | 11 Apr 2026 |
 | lib/services/insight_service.dart | InsightService — FULL algorithms: streak, stability score, day-of-week, emotion freq; removed unused _tempUserId | Piyush Puri | 13 Apr 2026 |
-| lib/services/notification_service.dart | NotificationService FULL — init, scheduleDailyReminder (zonedSchedule + DateTimeComponents.time), cancelDailyReminder | Piyush Puri | 13 Apr 2026 |
+| lib/services/notification_service.dart | NotificationService FULL — init (+ requestNotificationsPermission for Android 13+), scheduleDailyReminder (zonedSchedule + DateTimeComponents.time), cancelDailyReminder | Piyush Puri | 15 Apr 2026 |
 | lib/services/settings_service.dart | SettingsService — loadSettings (returns null on first launch), saveSettings (upsert) | Piyush Puri | 13 Apr 2026 |
 | lib/services/pdf_service.dart | PdfService — buildHistoryPdf (summary + entries table), buildInsightsPdf (hero score + patterns + emotion bars); ASCII-only | Piyush Puri | 13 Apr 2026 |
 | lib/providers/mood_provider.dart | MoodProvider — addMoodEntry, loadEntries, deleteEntry, todaysMood, recentEntries, currentStreak, longestStreak | Rajat Mahajan / Piyush Puri | 13 Apr 2026 |
 | lib/providers/insights_provider.dart | InsightsProvider — calculateInsights (wired to InsightService) | Rajat Mahajan | 11 Apr 2026 |
 | lib/providers/auth_provider.dart | AuthProvider stub — login/logout (Month 2) | Rajat Mahajan | 11 Apr 2026 |
-| lib/providers/settings_provider.dart | SettingsProvider FULL — loadSettings from DB, persist on change, wire NotificationService scheduling; void mutators for Switch compat | Piyush Puri | 13 Apr 2026 |
+| lib/providers/settings_provider.dart | SettingsProvider FULL — loadSettings from DB (+ auto-schedule notification on app start), persist on change, wire NotificationService scheduling; void mutators for Switch compat | Piyush Puri | 15 Apr 2026 |
 | lib/screens/home_screen.dart | Sanctuary redesign: editorial hero, bento grid (_VibeCard + _MoodSphereCard), forest.png bg, gold FAB, Recent Echoes | Piyush Puri | 15 Apr 2026 |
-| lib/screens/mood_entry_screen.dart | Sanctuary redesign: glow sphere, 10-bar scale, icon GridView chips, animated reflections field, gold save button | Piyush Puri | 15 Apr 2026 |
+| lib/screens/mood_entry_screen.dart | Sanctuary redesign: glow sphere (fixed: RadialGradient edge now dark gold not black), 10-bar scale, icon GridView chips, animated reflections field, gold save button | Piyush Puri | 15 Apr 2026 |
 | lib/screens/calendar_screen.dart | Sanctuary redesign: stat cards row (streak + completion%), heatmap card, insight card | Piyush Puri | 15 Apr 2026 |
-| lib/screens/insights_screen.dart | Sanctuary redesign: bento (stability card + MoodChart), pattern grid, emotion frequency bars | Piyush Puri | 15 Apr 2026 |
+| lib/screens/insights_screen.dart | Sanctuary redesign: bento (stability card + MoodChart, fixed: IntrinsicHeight + stretch alignment), pattern grid, emotion frequency bars | Piyush Puri | 15 Apr 2026 |
 | lib/screens/settings_screen.dart | Sanctuary redesign: editorial sections, _SanctuaryToggle (gold gradient), _SectionCard, _SettingsTile | Piyush Puri | 15 Apr 2026 |
 | lib/widgets/mood_scale_widget.dart | Sanctuary redesign: 10 vertical bars, gold gradient selected bar, glow shadow | Piyush Puri | 15 Apr 2026 |
 | lib/widgets/emotion_tag_selector.dart | Sanctuary redesign: 2-col icon GridView, 16 emotion icons, gold selected state | Piyush Puri | 15 Apr 2026 |
-| lib/widgets/calendar_heatmap.dart | Sanctuary redesign: 5-band colors, AspectRatio 1:1 cells, gold today ring, note dots, new legend | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/calendar_heatmap.dart | Sanctuary redesign: 5-band colors, SizedBox 32×32 cells (fixed: was AspectRatio 0×0), day numbers on all cells, gold today ring, note dots, new legend | Piyush Puri | 15 Apr 2026 |
 | lib/widgets/streak_counter.dart | Sanctuary redesign: 48x48 gold fire icon container, LinearProgressIndicator toward streakGoal | Piyush Puri | 15 Apr 2026 |
-| lib/widgets/mood_chart.dart | Sanctuary redesign: gold gradient line, no grid, tooltip uses surfaceContainerHighest | Piyush Puri | 15 Apr 2026 |
+| lib/widgets/mood_chart.dart | Sanctuary redesign: gold gradient line, no grid, tooltip uses surfaceContainerHighest; fixed: entries grouped by day + averaged so same-day entries don't cause vertical line | Piyush Puri | 15 Apr 2026 |
 | lib/widgets/bottom_nav_bar.dart | Sanctuary redesign: BackdropFilter frosted glass, gold LinearGradient active pill, AnimatedContainer | Piyush Puri | 15 Apr 2026 |
 | lib/widgets/mood_entry_card.dart | Sanctuary redesign: 56x56 square thumbnail, Newsreader headlineSerifMedium, moodColorForScore() | Piyush Puri | 15 Apr 2026 |
 | assets/images/forest.png | Forest background for _VibeCard — copied from design/stitch_daily_mood_tracker/home_dashboard_1/ | Piyush Puri | 15 Apr 2026 |
@@ -210,6 +216,7 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | 38d5bab | feat: Sanctuary theme tokens — gold palette + Newsreader/Manrope helpers | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 | dab435b | feat: Sanctuary UI redesign — all 5 screens + 7 widgets complete | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 | 61a1d8d | feat: add forest background image to Current Resonance vibe card | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
+| c63dd63 | fix: resolve 4 live bugs — calendar heatmap, insights layout, sphere gradient, notifications | feature/mood_to_tracker_2 | Piyush Puri | 15 Apr 2026 |
 
 ---
 
@@ -232,3 +239,6 @@ Legend: DONE | DONE FULL | DONE stub | SHELL (needs full implementation) | IN PR
 | Sanctuary editorial dark theme adopted for all 5 screens + 7 widgets — deep forest green #0b1513 bg + gold #e9c176 primary; Newsreader (serif) + Manrope (sans-serif) via google_fonts | Piyush Puri | 15 Apr 2026 |
 | App icon generated via flutter_launcher_icons 0.14.4 from app_icon.jpeg — covers all Android mipmap densities + iOS | Piyush Puri | 15 Apr 2026 |
 | moodColorForScore() in AppTheme is the new canonical mood color lookup; color_utils.dart is legacy (kept for compatibility) | Piyush Puri | 15 Apr 2026 |
+| CalendarHeatmap cells must use SizedBox(32×32) not AspectRatio — AspectRatio needs bounded constraints and renders at 0×0 inside an unconstrained Row > Column | Piyush Puri | 15 Apr 2026 |
+| MoodChart groups entries by day and averages mood scores — prevents vertical-line rendering when multiple entries share the same date | Piyush Puri | 15 Apr 2026 |
+| NotificationService.init() must call requestNotificationsPermission() on Android — required for API 33+ or notifications are silently blocked | Piyush Puri | 15 Apr 2026 |
