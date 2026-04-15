@@ -1,10 +1,8 @@
-// Widget: EmotracBottomNavBar | Author: Rajat Mahajan | Date: 11 Apr 2026
-// Full impl: Piyush Puri | Date: 13 Apr 2026
-// Note: Navigation is handled in main.dart MainNavigation.
-// This widget is a styled wrapper — available for future use if nav is extracted.
+// Widget: EmotracBottomNavBar | Author: Piyush Puri | Date: 15 Apr 2026
+// Sanctuary frosted glass nav bar — gold gradient active pill, 4 tabs
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
-
 import '../config/theme.dart';
 
 class EmotracBottomNavBar extends StatelessWidget {
@@ -17,43 +15,93 @@ class EmotracBottomNavBar extends StatelessWidget {
     required this.onTap,
   });
 
+  static const _tabs = [
+    _NavTab(label: 'HOME',     icon: Icons.home_outlined,           activeIcon: Icons.home),
+    _NavTab(label: 'CALENDAR', icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month),
+    _NavTab(label: 'INSIGHTS', icon: Icons.analytics_outlined,      activeIcon: Icons.analytics),
+    _NavTab(label: 'SETTINGS', icon: Icons.settings_outlined,       activeIcon: Icons.settings),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      backgroundColor: const Color(0xB3131313),
-      selectedItemColor: AppTheme.tealLight,
-      unselectedItemColor: AppTheme.textSecondary,
-      type: BottomNavigationBarType.fixed,
-      elevation: 0,
-      selectedLabelStyle: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0b1513).withValues(alpha: 0.85),
+            boxShadow: const [
+              BoxShadow(
+                offset: Offset(0, -20),
+                blurRadius: 40,
+                color: Color(0x660b1513),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomPadding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_tabs.length, (i) {
+                final isActive = i == currentIndex;
+                return GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isActive ? 20 : 12,
+                      vertical: 8,
+                    ),
+                    decoration: isActive
+                        ? BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : null,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isActive ? _tabs[i].activeIcon : _tabs[i].icon,
+                          size: 20,
+                          color: isActive
+                              ? AppTheme.onPrimary
+                              : const Color(0xFFc5a059).withValues(alpha: 0.6),
+                        ),
+                        if (isActive) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            _tabs[i].label,
+                            style: const TextStyle(
+                              fontFamily: 'Manrope',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
       ),
-      unselectedLabelStyle: const TextStyle(fontSize: 11),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home_rounded),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_month_outlined),
-          activeIcon: Icon(Icons.calendar_month_rounded),
-          label: 'Calendar',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart_outlined),
-          activeIcon: Icon(Icons.bar_chart_rounded),
-          label: 'Insights',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          activeIcon: Icon(Icons.settings_rounded),
-          label: 'Settings',
-        ),
-      ],
     );
   }
+}
+
+class _NavTab {
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
+  const _NavTab({required this.label, required this.icon, required this.activeIcon});
 }

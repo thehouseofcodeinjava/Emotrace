@@ -1,4 +1,6 @@
 // Widget: MoodChart — 30-day mood trend line chart | Author: Piyush Puri | Date: 11 Apr 2026
+// Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
+// Gold gradient line, no grid, Sanctuary surface container
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -31,21 +33,14 @@ class MoodChart extends StatelessWidget {
       height: 200,
       padding: const EdgeInsets.only(top: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: AppTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
       child: LineChart(
         LineChartData(
           minY: 1,
           maxY: 10,
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => const FlLine(
-              color: Color(0x0FFFFFFF),
-              strokeWidth: 1,
-            ),
-          ),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
@@ -55,10 +50,7 @@ class MoodChart extends StatelessWidget {
                 interval: 5,
                 getTitlesWidget: (value, _) => Text(
                   value.toInt().toString(),
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 10,
-                  ),
+                  style: AppTheme.labelCaps.copyWith(fontSize: 10),
                 ),
               ),
             ),
@@ -80,10 +72,7 @@ class MoodChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       DateFormat('d MMM').format(date),
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 9,
-                      ),
+                      style: AppTheme.labelCaps.copyWith(fontSize: 9),
                     ),
                   );
                 },
@@ -95,16 +84,21 @@ class MoodChart extends StatelessWidget {
               spots: spots,
               isCurved: true,
               curveSmoothness: 0.35,
-              color: AppTheme.tealLight,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+              ),
               barWidth: 2.5,
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                  radius: 3,
-                  color: AppTheme.tealLight,
-                  strokeWidth: 1.5,
-                  strokeColor: AppTheme.background,
-                ),
+                getDotPainter: (spot, _, __, i) {
+                  final isLast = i == spots.length - 1;
+                  return FlDotCirclePainter(
+                    radius: isLast ? 5 : 3,
+                    color: const Color(0xFFe9c176),
+                    strokeWidth: isLast ? 2 : 1,
+                    strokeColor: AppTheme.background,
+                  );
+                },
               ),
               belowBarData: BarAreaData(
                 show: true,
@@ -112,8 +106,8 @@ class MoodChart extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.tealLight.withValues(alpha: 0.3),
-                    AppTheme.tealLight.withValues(alpha: 0.0),
+                    const Color(0xFFe9c176).withValues(alpha: 0.15),
+                    const Color(0xFFe9c176).withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -121,12 +115,12 @@ class MoodChart extends StatelessWidget {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => AppTheme.surfaceVariant,
+              getTooltipColor: (_) => AppTheme.surfaceContainerHighest,
               getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
                 return LineTooltipItem(
                   '${s.y.toInt()}/10',
                   const TextStyle(
-                    color: AppTheme.tealLight,
+                    color: AppTheme.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -143,18 +137,18 @@ class MoodChart extends StatelessWidget {
     return Container(
       height: 160,
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: AppTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart_outlined, color: AppTheme.textSecondary, size: 32),
-            SizedBox(height: 8),
+            const Icon(Icons.bar_chart_outlined, color: AppTheme.textSecondary, size: 32),
+            const SizedBox(height: 8),
             Text(
               'Log 3+ moods to see your trend',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              style: AppTheme.bodySmall,
             ),
           ],
         ),

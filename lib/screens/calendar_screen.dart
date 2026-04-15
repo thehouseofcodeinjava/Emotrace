@@ -1,6 +1,6 @@
 // Screen: CalendarScreen | Author: Piyush Puri | Date: 11 Apr 2026
-// Updated: 12 Apr 2026 — wired StreakCounter widget, added pull-to-refresh
-// Design reference: design/emotional_calendar/code.html
+// Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
+// Stat cards row (streak + completion %), Sanctuary heatmap card, editorial header
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +9,6 @@ import '../config/theme.dart';
 import '../providers/mood_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/calendar_heatmap.dart';
-import '../widgets/streak_counter.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -30,101 +29,101 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: Consumer<MoodProvider>(
         builder: (context, moodProvider, _) {
           final entries = moodProvider.entries;
 
-          // Full-screen spinner only on first load (no data yet)
           if (moodProvider.isLoading && entries.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            );
           }
 
           final streak = AppDateUtils.calculateCurrentStreak(
             entries.map((e) => e.createdAt).toList(),
           );
-          final longestStreak =
-              _calculateLongestStreak(entries.map((e) => e.createdAt).toList());
+          final longestStreak = _calculateLongestStreak(
+              entries.map((e) => e.createdAt).toList());
+
+          // Completion % — entries this month / days elapsed this month
+          final now = DateTime.now();
+          final daysElapsed = now.day;
+          final thisMonthEntries = entries.where((e) =>
+              e.createdAt.month == now.month &&
+              e.createdAt.year == now.year).length;
+          final completionPct =
+              daysElapsed > 0 ? (thisMonthEntries / daysElapsed * 100).round() : 0;
 
           return RefreshIndicator(
             onRefresh: moodProvider.loadEntries,
-            color: AppTheme.teal,
-            backgroundColor: AppTheme.cardBackground,
+            color: AppTheme.primary,
             child: CustomScrollView(
-              // Required for RefreshIndicator to trigger on short content
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // ── App bar ──────────────────────────────────────────────
+                // App bar
                 SliverAppBar(
                   pinned: true,
                   backgroundColor: AppTheme.background,
-                  title: const Text(
-                    'EMOTRACE',
-                    style: TextStyle(
-                      color: AppTheme.teal,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                  title: Text('EMOTRACE',
+                      style: AppTheme.headlineSerifItalic.copyWith(fontSize: 22)),
                   elevation: 0,
                 ),
-
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Header ────────────────────────────────────────
-                        const Text(
-                          'HISTORICAL OVERVIEW',
-                          style: TextStyle(
-                            color: AppTheme.tealLight,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Your Emotional\nCalendar',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                            height: 1.1,
-                          ),
-                        ),
+                        // Editorial header
+                        Text('Your Emotional', style: AppTheme.headlineSerif),
+                        Text('Calendar',
+                            style: AppTheme.headlineSerifItalic.copyWith(fontSize: 32)),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Scroll to see past 90 days',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 14),
+                        Text('Your mood history at a glance',
+                            style: AppTheme.bodyMedium.copyWith(
+                                color: AppTheme.textSecondary)),
+                        const SizedBox(height: 24),
+
+                        // Stat cards row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                label: 'CURRENT STREAK',
+                                value: '$streak days 🔥',
+                                bg: AppTheme.surfaceContainerLow,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _StatCard(
+                                label: 'COMPLETION',
+                                value: '$completionPct%',
+                                bg: AppTheme.surfaceContainerHigh,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
 
-                        // ── Streak bento grid (StreakCounter widget) ──────
-                        StreakCounter(
-                          currentStreak: streak,
-                          longestStreak: longestStreak,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // ── Heatmap card ──────────────────────────────────
+                        // Heatmap card
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: AppTheme.cardBackground,
-                            borderRadius: BorderRadius.circular(16),
+                            color: AppTheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: CalendarHeatmap(entries: entries),
                         ),
                         const SizedBox(height: 20),
 
-                        // ── Trends summary ────────────────────────────────
+                        // Insight card
                         if (entries.isNotEmpty)
-                          _TrendsSummaryCard(entries: entries),
+                          _InsightCard(
+                            longestStreak: longestStreak,
+                            totalEntries: entries.length,
+                          ),
                       ],
                     ),
                   ),
@@ -158,46 +157,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 }
 
-// ─── Trends summary card ────────────────────────────────────────────────────
-
-class _TrendsSummaryCard extends StatelessWidget {
-  final List entries;
-
-  const _TrendsSummaryCard({required this.entries});
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color bg;
+  const _StatCard({required this.label, required this.value, required this.bg});
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final thisMonthEntries = entries.where((e) {
-      return e.createdAt.month == now.month && e.createdAt.year == now.year;
-    }).toList();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTheme.labelCaps),
+          const SizedBox(height: 8),
+          Text(value,
+              style: AppTheme.headlineSerifMedium.copyWith(color: AppTheme.primary)),
+        ],
+      ),
+    );
+  }
+}
 
-    final prevMonthEntries = entries.where((e) {
-      final prev = DateTime(now.year, now.month - 1);
-      return e.createdAt.month == prev.month && e.createdAt.year == prev.year;
-    }).toList();
+class _InsightCard extends StatelessWidget {
+  final int longestStreak;
+  final int totalEntries;
+  const _InsightCard({required this.longestStreak, required this.totalEntries});
 
-    double? diff;
-    if (thisMonthEntries.isNotEmpty && prevMonthEntries.isNotEmpty) {
-      final thisAvg =
-          thisMonthEntries.fold<int>(0, (s, e) => s + (e.moodScore as int)) /
-              thisMonthEntries.length;
-      final prevAvg =
-          prevMonthEntries.fold<int>(0, (s, e) => s + (e.moodScore as int)) /
-              prevMonthEntries.length;
-      diff = prevAvg > 0 ? ((thisAvg - prevAvg) / prevAvg * 100) : null;
-    }
-
-    final monthName = _monthName(now.month);
-
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.cardBackground, AppTheme.background],
-        ),
+        color: AppTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.2)),
       ),
@@ -207,66 +204,42 @@ class _TrendsSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$monthName Trends',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Text('Historical Peak', style: AppTheme.headlineSerifMedium),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text('Longest streak: ',
+                        style: AppTheme.bodySmall),
+                    Text('$longestStreak days',
+                        style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w700)),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  diff != null
-                      ? 'You\'ve been ${diff.abs().toStringAsFixed(0)}% '
-                          '${diff > 0 ? 'more positive' : 'less positive'} '
-                          'this month compared to last month. Keep tracking!'
-                      : 'Keep logging to see monthly comparisons.',
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 13),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text('Total entries: ',
+                        style: AppTheme.bodySmall),
+                    Text('$totalEntries',
+                        style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w700)),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
           Container(
-            width: 44,
-            height: 44,
+            width: 44, height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.teal.withValues(alpha: 0.15),
+              color: AppTheme.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              diff != null && diff > 0
-                  ? Icons.trending_up
-                  : diff != null && diff < 0
-                      ? Icons.trending_down
-                      : Icons.trending_flat,
-              color: AppTheme.tealLight,
-              size: 22,
-            ),
+            child: const Icon(Icons.insights, color: AppTheme.primary, size: 22),
           ),
         ],
       ),
     );
-  }
-
-  String _monthName(int month) {
-    const names = [
-      '',
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    return names[month];
   }
 }

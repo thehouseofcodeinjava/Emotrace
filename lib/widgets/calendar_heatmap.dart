@@ -1,13 +1,13 @@
 // Widget: CalendarHeatmap — 90-day mood color grid with month navigation | Author: Piyush Puri | Date: 11 Apr 2026
-// Design reference: design/emotional_calendar/code.html
-// Features: month navigation, tap-to-view entry details, color legend, entry count.
+// Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
+// Square cells, 5-band Sanctuary color scale, note dots, gold today ring
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../config/constants.dart';
 import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
-import '../utils/color_utils.dart';
 import '../utils/date_utils.dart';
 
 class CalendarHeatmap extends StatefulWidget {
@@ -51,7 +51,6 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
   void _prevMonth() {
-    // Only allow going back up to 3 months ago
     final limit = DateTime.now().subtract(const Duration(days: 90));
     final prev = DateTime(_displayedMonth.year, _displayedMonth.month - 1);
     if (!prev.isBefore(DateTime(limit.year, limit.month))) {
@@ -79,15 +78,12 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     return _displayedMonth.isBefore(DateTime(now.year, now.month));
   }
 
-  // Returns list of weeks for the displayed month.
-  // Each week is a list of 7 nullable DateTimes (Mon–Sun).
   List<List<DateTime?>> _buildWeeks() {
     final firstDay = _displayedMonth;
     final lastDay = DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0);
 
-    // Weekday: Mon=1 … Sun=7 (Dart DateTime)
-    final startOffset = firstDay.weekday - 1; // cells before the 1st
-    final endOffset = 7 - lastDay.weekday;    // cells after the last
+    final startOffset = firstDay.weekday - 1;
+    final endOffset = 7 - lastDay.weekday;
 
     final allDays = <DateTime?>[
       ...List.filled(startOffset, null),
@@ -116,7 +112,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             IconButton(
               onPressed: _canGoPrev ? _prevMonth : null,
               icon: const Icon(Icons.chevron_left),
-              color: _canGoPrev ? AppTheme.textPrimary : AppTheme.textSecondary,
+              color: _canGoPrev ? AppTheme.primary : AppTheme.textSecondary,
               iconSize: 22,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -124,17 +120,13 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             const SizedBox(width: 8),
             Text(
               monthLabel,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTheme.headlineSerifMedium.copyWith(fontSize: 18),
             ),
             const SizedBox(width: 8),
             IconButton(
               onPressed: _canGoNext ? _nextMonth : null,
               icon: const Icon(Icons.chevron_right),
-              color: _canGoNext ? AppTheme.textPrimary : AppTheme.textSecondary,
+              color: _canGoNext ? AppTheme.primary : AppTheme.textSecondary,
               iconSize: 22,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -191,13 +183,12 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.storage_rounded,
-                  size: 14, color: AppTheme.tealLight),
+                  size: 14, color: AppTheme.primary),
               const SizedBox(width: 6),
               Text(
                 'Total entries: ${widget.entries.length}',
-                style: const TextStyle(
+                style: AppTheme.bodySmall.copyWith(
                   color: AppTheme.textPrimary,
-                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -217,47 +208,69 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     final entry = _entryMap[key];
     final isToday = AppDateUtils.isToday(day);
 
-    Color cellColor;
-    if (entry != null) {
-      cellColor = AppColorUtils.getMoodColor(entry.moodScore);
-    } else {
-      cellColor = AppTheme.surfaceVariant;
-    }
+    final cellColor = entry != null
+        ? AppTheme.moodColorForScore(entry.moodScore)
+        : AppTheme.surfaceContainerHighest;
 
     return GestureDetector(
       onTap: entry != null ? () => _showEntryDetails(context, entry) : null,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: cellColor.withValues(alpha: entry != null ? 1.0 : 0.4),
-          borderRadius: BorderRadius.circular(6),
-          border: isToday
-              ? Border.all(color: AppTheme.tealLight, width: 1.5)
-              : null,
-        ),
-        child: day.day == 1
-            ? Center(
-                child: Text(
-                  '${day.day}',
-                  style: TextStyle(
-                    color: entry != null
-                        ? Colors.white.withValues(alpha: 0.9)
-                        : AppTheme.textSecondary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
+      child: AspectRatio(
+        aspectRatio: 1.0,
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: entry != null
+                ? cellColor
+                : AppTheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(8),
+            border: isToday
+                ? Border.all(color: AppTheme.primary, width: 1.5)
+                : entry == null
+                    ? Border.all(
+                        color: AppTheme.outlineVariant.withValues(alpha: 0.2),
+                        width: 0.5)
+                    : null,
+          ),
+          child: Stack(
+            children: [
+              if (day.day == 1)
+                Center(
+                  child: Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      color: entry != null
+                          ? Colors.white.withValues(alpha: 0.9)
+                          : AppTheme.textSecondary,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              )
-            : null,
+              // Note dot
+              if (entry != null && entry.notes.isNotEmpty)
+                Positioned(
+                  bottom: 3, left: 0, right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 4, height: 4,
+                      decoration: const BoxDecoration(
+                        color: Colors.white, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   void _showEntryDetails(BuildContext context, MoodEntry entry) {
-    final emoji = _emojiForScore(entry.moodScore);
+    final emoji = AppConstants.moodEmojis[entry.moodScore.clamp(1, 10)] ?? '🙂';
     final dateLabel = DateFormat('EEEE, d MMMM yyyy').format(entry.createdAt);
     final timeLabel = DateFormat('HH:mm').format(entry.createdAt);
+    final moodColor = AppTheme.moodColorForScore(entry.moodScore);
+    final moodLabel = AppConstants.moodLabels[entry.moodScore] ?? '';
 
     showModalBottomSheet(
       context: context,
@@ -274,8 +287,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             // Handle bar
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40, height: 4,
                 decoration: BoxDecoration(
                   color: AppTheme.outlineVariant,
                   borderRadius: BorderRadius.circular(99),
@@ -285,13 +297,9 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             const SizedBox(height: 20),
 
             // Date + time
-            Text(dateLabel,
-                style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 12)),
+            Text(dateLabel, style: AppTheme.bodySmall),
             const SizedBox(height: 4),
-            Text(timeLabel,
-                style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 11)),
+            Text(timeLabel, style: AppTheme.bodySmall),
             const SizedBox(height: 16),
 
             // Emoji + score
@@ -304,18 +312,12 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                   children: [
                     Text(
                       '${entry.moodScore}/10',
-                      style: TextStyle(
-                        color: AppColorUtils.getMoodColor(entry.moodScore),
+                      style: AppTheme.headlineSerif.copyWith(
+                        color: moodColor,
                         fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
                       ),
                     ),
-                    Text(
-                      AppColorUtils.getMoodLabel(entry.moodScore),
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 11),
-                    ),
+                    Text(moodLabel, style: AppTheme.bodySmall),
                   ],
                 ),
               ],
@@ -324,8 +326,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
             // Emotions
             if (entry.emotionTags.isNotEmpty) ...[
-              const Text('Emotions',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              Text('Emotions', style: AppTheme.labelCaps),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
@@ -335,14 +336,13 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.teal.withValues(alpha: 0.15),
+                            color: AppTheme.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                                color: AppTheme.teal.withValues(alpha: 0.3)),
+                                color: AppTheme.primary.withValues(alpha: 0.3)),
                           ),
-                          child: Text(tag,
-                              style: const TextStyle(
-                                  color: AppTheme.tealLight, fontSize: 12)),
+                          child: Text(tag, style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.primary)),
                         ))
                     .toList(),
               ),
@@ -351,12 +351,9 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
             // Notes
             if (entry.notes.isNotEmpty) ...[
-              const Text('Notes',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              Text('Notes', style: AppTheme.labelCaps),
               const SizedBox(height: 6),
-              Text(entry.notes,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary, fontSize: 14)),
+              Text(entry.notes, style: AppTheme.bodyMedium),
             ],
           ],
         ),
@@ -366,47 +363,27 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
   Widget _buildLegend() {
     final items = [
-      ('1–2', const Color(0xFFE63946)),
-      ('3–4', const Color(0xFFFF9800)),
-      ('5–6', const Color(0xFFFFC107)),
-      ('7–8', const Color(0xFF47F3BB)),
-      ('9–10', const Color(0xFF06D6A0)),
+      ('1–2', const Color(0xFF93000a)),
+      ('3–4', const Color(0xFFc5a059)),
+      ('5–6', const Color(0xFFb5ccc1)),
+      ('7–8', const Color(0xFF394d45)),
+      ('9–10', const Color(0xFF21342d)),
     ];
-
     return Wrap(
       spacing: 12,
       runSpacing: 6,
-      children: items.map((item) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: item.$2,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              item.$1,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        );
-      }).toList(),
+      children: items.map((item) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10, height: 10,
+            decoration: BoxDecoration(
+                color: item.$2, borderRadius: BorderRadius.circular(3)),
+          ),
+          const SizedBox(width: 4),
+          Text(item.$1, style: AppTheme.bodySmall),
+        ],
+      )).toList(),
     );
-  }
-
-  String _emojiForScore(int score) {
-    const emojis = {
-      1: '😣', 2: '😢', 3: '😕', 4: '😐', 5: '😶',
-      6: '🙂', 7: '😊', 8: '😄', 9: '😁', 10: '🤩',
-    };
-    return emojis[score.clamp(1, 10)] ?? '🙂';
   }
 }

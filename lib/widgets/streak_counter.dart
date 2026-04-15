@@ -1,11 +1,10 @@
 // Widget: StreakCounter | Author: Piyush Puri | Date: 12 Apr 2026
-// Full bento-grid implementation — replaces Rajat Mahajan's shell (11 Apr 2026)
-// Used by: CalendarScreen (and HomeScreen in Week 2)
+// Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
+// Fire icon in gold gradient square, Newsreader bold streak count
 
 import 'package:flutter/material.dart';
-
-import '../config/theme.dart';
 import '../config/constants.dart';
+import '../config/theme.dart';
 
 class StreakCounter extends StatelessWidget {
   final int currentStreak;
@@ -19,65 +18,69 @@ class StreakCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        (currentStreak / AppConstants.streakGoal).clamp(0.0, 1.0);
+    final progress = (currentStreak / AppConstants.streakGoal).clamp(0.0, 1.0);
 
     return Row(
       children: [
-        // ── Current streak card (larger) ──────────────────────────────
+        // Current streak card
         Expanded(
           flex: 3,
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppTheme.cardBackground,
+              color: AppTheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                const Text(
-                  'CONSISTENCY',
-                  style: TextStyle(
-                    color: AppTheme.orange,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.5,
+                // Gold fire icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department,
+                    color: Color(0xFF412d00),
+                    size: 28,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  currentStreak == 0
-                      ? 'Start your streak!'
-                      : 'Current Streak: $currentStreak days 🔥',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('CURRENT STREAK', style: AppTheme.labelCaps),
+                      const SizedBox(height: 4),
+                      Text(
+                        currentStreak == 0 ? 'Start today!' : '$currentStreak Days',
+                        style: AppTheme.headlineSerifMedium.copyWith(
+                            fontSize: 22,
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(99),
                         child: LinearProgressIndicator(
                           value: progress,
-                          minHeight: 6,
-                          backgroundColor: AppTheme.surfaceVariant,
+                          minHeight: 4,
+                          backgroundColor: AppTheme.surfaceContainerHighest,
                           valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppTheme.tealLight),
+                              AppTheme.primary),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Goal: ${AppConstants.streakGoal}',
-                      style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 11),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text('Goal: ${AppConstants.streakGoal} days',
+                          style: AppTheme.bodySmall),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -85,13 +88,13 @@ class StreakCounter extends StatelessWidget {
         ),
         const SizedBox(width: 12),
 
-        // ── Longest streak card ───────────────────────────────────────
+        // Longest streak card
         Expanded(
           flex: 2,
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppTheme.cardHigh,
+              color: AppTheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                   color: AppTheme.outlineVariant.withValues(alpha: 0.3)),
@@ -99,20 +102,14 @@ class StreakCounter extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Longest Streak',
-                  style: TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 12),
-                ),
+                Text('Longest Streak', style: AppTheme.bodySmall),
                 const SizedBox(height: 8),
                 Text(
                   '$longestStreak days',
-                  style: const TextStyle(
-                    color: AppTheme.tealLight,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  ),
+                  style: AppTheme.headlineSerif.copyWith(
+                      fontSize: 28,
+                      color: AppTheme.primary,
+                      letterSpacing: -1),
                 ),
               ],
             ),

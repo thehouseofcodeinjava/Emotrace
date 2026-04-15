@@ -1,6 +1,6 @@
 // Screen: HomeScreen | Author: Rajat Mahajan | Date: 11 Apr 2026
-// Full impl: Piyush Puri | Date: 13 Apr 2026
-// Dashboard — greeting, today's mood card, streak counter, recent entries, FAB
+// Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
+// Editorial hero header, bento grid (vibe card + mood sphere), Recent Echoes grid, gold FAB
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -12,7 +12,6 @@ import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
 import '../providers/mood_provider.dart';
 import '../widgets/mood_entry_card.dart';
-import '../widgets/streak_counter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,270 +29,327 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _refresh(MoodProvider provider) => provider.loadEntries();
-
   void _goToMoodEntry() {
+    final provider = context.read<MoodProvider>();
     Navigator.pushNamed(context, AppRoutes.moodEntry)
-        .then((_) => context.read<MoodProvider>().loadEntries());
+        .then((_) => provider.loadEntries());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: Consumer<MoodProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading && provider.entries.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            );
           }
 
-          return RefreshIndicator(
-            color: AppTheme.teal,
-            onRefresh: () => _refresh(provider),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                _buildAppBar(),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      const SizedBox(height: 8),
-                      _GreetingSection(),
-                      const SizedBox(height: 20),
-                      _TodayMoodCard(
-                        entry: provider.todaysMood,
-                        onTap: _goToMoodEntry,
-                      ),
-                      const SizedBox(height: 16),
-                      StreakCounter(
-                        currentStreak: provider.currentStreak,
-                        longestStreak: provider.longestStreak,
-                      ),
-                      const SizedBox(height: 24),
-                      _RecentEntriesSection(entries: provider.recentEntries),
-                      if (provider.error != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            provider.error!,
-                            style: const TextStyle(color: AppTheme.red, fontSize: 13),
+          return Stack(
+            children: [
+              RefreshIndicator(
+                color: AppTheme.primary,
+                onRefresh: provider.loadEntries,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    _buildAppBar(),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const SizedBox(height: 8),
+                          _HeroHeader(
+                            currentStreak: provider.currentStreak,
                           ),
-                        ),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToMoodEntry,
-        backgroundColor: AppTheme.teal,
-        foregroundColor: const Color(0xFF003827),
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Log Mood',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
-  }
-
-  SliverAppBar _buildAppBar() {
-    return const SliverAppBar(
-      floating: true,
-      snap: true,
-      backgroundColor: AppTheme.background,
-      title: Text(
-        AppConstants.appName,
-        style: TextStyle(
-          color: AppTheme.teal,
-          fontSize: 22,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.5,
-        ),
-      ),
-      centerTitle: false,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Greeting section
-// ─────────────────────────────────────────────────────────────
-class _GreetingSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final greeting = _timeGreeting(now.hour);
-    final dateStr = DateFormat('EEEE, d MMMM').format(now);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          greeting,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          dateStr,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-        ),
-      ],
-    );
-  }
-
-  String _timeGreeting(int hour) {
-    if (hour < 12) return 'Good morning.';
-    if (hour < 17) return 'Good afternoon.';
-    return 'Good evening.';
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Today's mood card
-// ─────────────────────────────────────────────────────────────
-class _TodayMoodCard extends StatelessWidget {
-  final MoodEntry? entry;
-  final VoidCallback onTap;
-
-  const _TodayMoodCard({required this.entry, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    if (entry == null) {
-      return _EmptyMoodCard(onTap: onTap);
-    }
-    return _FilledMoodCard(entry: entry!);
-  }
-}
-
-class _EmptyMoodCard extends StatelessWidget {
-  final VoidCallback onTap;
-  const _EmptyMoodCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.teal.withValues(alpha: 0.25),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            const Text('😶', style: TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
-            const Text(
-              'No mood logged today',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Tap to check in — takes 30 seconds',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FilledMoodCard extends StatelessWidget {
-  final MoodEntry entry;
-  const _FilledMoodCard({required this.entry});
-
-  @override
-  Widget build(BuildContext context) {
-    final moodColor = moodColors[entry.moodScore] ?? AppTheme.teal;
-    final emoji = AppConstants.moodEmojis[entry.moodScore] ?? '';
-    final label = AppConstants.moodLabels[entry.moodScore] ?? '';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: moodColor.withValues(alpha: 0.35),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 52)),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'TODAY',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.5,
+                          const SizedBox(height: 24),
+                          _BentoGrid(
+                            todaysMood: provider.todaysMood,
+                            recentEntries: provider.entries,
+                            onCheckIn: _goToMoodEntry,
+                          ),
+                          const SizedBox(height: 28),
+                          _RecentEchoesSection(
+                            entries: provider.recentEntries,
+                          ),
+                        ]),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${entry.moodScore}/10',
-                  style: TextStyle(
-                    color: moodColor,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (entry.emotionTags.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.emotionTags.join(' · '),
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
+              ),
+              // Gold FAB — bottom right
+              Positioned(
+                right: 24,
+                bottom: 100,
+                child: GestureDetector(
+                  onTap: _goToMoodEntry,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x40e9c176),
+                          blurRadius: 20,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    child: const Icon(Icons.add, color: Color(0xFF412d00), size: 28),
                   ),
-                ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  SliverAppBar _buildAppBar() {
+    return SliverAppBar(
+      floating: true,
+      snap: true,
+      backgroundColor: AppTheme.background,
+      leading: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppTheme.outlineVariant, width: 1),
+          ),
+          child: const Icon(Icons.person_outline,
+              color: AppTheme.textSecondary, size: 20),
+        ),
+      ),
+      title: Text(
+        'EMOTRACE',
+        style: AppTheme.headlineSerifItalic.copyWith(fontSize: 22),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none, color: AppTheme.primary),
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Hero header ─────────────────────────────────────────────────────────────
+
+class _HeroHeader extends StatelessWidget {
+  final int currentStreak;
+  const _HeroHeader({required this.currentStreak});
+
+  @override
+  Widget build(BuildContext context) {
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good morning,' : hour < 17 ? 'Good afternoon,' : 'Good evening,';
+    final date = DateFormat('EEEE, d MMMM').format(DateTime.now());
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(greeting, style: AppTheme.headlineSerif),
+              Text('You', style: AppTheme.displaySerifItalic.copyWith(fontSize: 36)),
+              const SizedBox(height: 6),
+              Text(date, style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Streak card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.local_fire_department,
+                    color: Color(0xFF412d00), size: 28),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$currentStreak',
+                style: AppTheme.headlineSerifMedium.copyWith(
+                    fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primary),
+              ),
+              Text('DAYS', style: AppTheme.labelCaps),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Bento grid ───────────────────────────────────────────────────────────────
+
+class _BentoGrid extends StatelessWidget {
+  final MoodEntry? todaysMood;
+  final List<MoodEntry> recentEntries;
+  final VoidCallback onCheckIn;
+
+  const _BentoGrid({
+    required this.todaysMood,
+    required this.recentEntries,
+    required this.onCheckIn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 320,
+      child: Row(
+        children: [
+          // Vibe card — 2/3 width
+          Expanded(
+            flex: 2,
+            child: _VibeCard(entry: todaysMood, onCheckIn: onCheckIn),
+          ),
+          const SizedBox(width: 12),
+          // Mood sphere — 1/3 width
+          Expanded(
+            flex: 1,
+            child: _MoodSphereCard(entries: recentEntries),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VibeCard extends StatelessWidget {
+  final MoodEntry? entry;
+  final VoidCallback onCheckIn;
+  const _VibeCard({required this.entry, required this.onCheckIn});
+
+  @override
+  Widget build(BuildContext context) {
+    final moodColor = entry != null
+        ? AppTheme.moodColorForScore(entry!.moodScore)
+        : AppTheme.secondaryContainer;
+    final label = entry != null
+        ? (AppConstants.moodLabels[entry!.moodScore] ?? '')
+        : 'Not logged';
+    final score = entry?.moodScore;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            moodColor.withValues(alpha: 0.15),
+            AppTheme.surfaceContainerLow,
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Gradient overlay bottom
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    AppTheme.background.withValues(alpha: 0.8),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.6],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pill badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceContainer.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primary, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('CURRENT RESONANCE',
+                          style: AppTheme.labelCaps.copyWith(color: AppTheme.primary)),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // Score
+                if (score != null)
+                  Text('$score', style: AppTheme.displaySerif.copyWith(
+                      fontSize: 64, color: AppTheme.primary, height: 1)),
+                Text(
+                  score != null ? '$label · $score/10' : 'Tap to check in',
+                  style: AppTheme.headlineSerifMedium.copyWith(
+                      color: AppTheme.textPrimary, fontSize: 18),
+                ),
+                const SizedBox(height: 16),
+                // Check in button
+                GestureDetector(
+                  onTap: onCheckIn,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFFe9c176), Color(0xFFc5a059)]),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.edit_note, color: Color(0xFF412d00), size: 18),
+                        const SizedBox(width: 6),
+                        Text('Check In',
+                            style: AppTheme.labelMedium.copyWith(color: const Color(0xFF412d00))),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -303,44 +359,109 @@ class _FilledMoodCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Recent entries section
-// ─────────────────────────────────────────────────────────────
-class _RecentEntriesSection extends StatelessWidget {
+class _MoodSphereCard extends StatelessWidget {
   final List<MoodEntry> entries;
-  const _RecentEntriesSection({required this.entries});
+  const _MoodSphereCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final weekEntries = entries.where((e) =>
+        now.difference(e.createdAt).inDays < 7).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Weekly\nSky', style: AppTheme.headlineSerifMedium.copyWith(fontSize: 18)),
+            const SizedBox(height: 12),
+            // Ambient orb
+            Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppTheme.primary.withValues(alpha: 0.3),
+                      AppTheme.primary.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(Icons.filter_drama,
+                      color: AppTheme.primary, size: 36),
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Mini 5-bar trend
+            if (weekEntries.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(5, (i) {
+                  final idx = (weekEntries.length - 5 + i).clamp(0, weekEntries.length - 1);
+                  final score = weekEntries[idx].moodScore;
+                  final barH = 8.0 + (score / 10) * 28;
+                  return Container(
+                    width: 10,
+                    height: barH,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.6 + 0.04 * score),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    ),
+                  );
+                }),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Recent Echoes section ────────────────────────────────────────────────────
+
+class _RecentEchoesSection extends StatelessWidget {
+  final List<MoodEntry> entries;
+  const _RecentEchoesSection({required this.entries});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'RECENT ENTRIES',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.5,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Recent Echoes', style: AppTheme.headlineSerif.copyWith(fontSize: 24)),
+            Text('View All →',
+                style: AppTheme.bodySmall.copyWith(color: AppTheme.primary)),
+          ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
         if (entries.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 28),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Text('📋', style: TextStyle(fontSize: 28)),
-                SizedBox(height: 8),
-                Text(
-                  'No entries yet — start logging!',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                ),
+                const Icon(Icons.auto_awesome_outlined, color: AppTheme.primary, size: 32),
+                const SizedBox(height: 12),
+                Text('No entries yet — start logging!',
+                    style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
               ],
             ),
           )
