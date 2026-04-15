@@ -260,34 +260,33 @@ class _VibeCard extends StatelessWidget {
         : 'Not logged';
     final score = entry?.moodScore;
 
-    return Container(
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+      decoration: const BoxDecoration(
         color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            moodColor.withValues(alpha: 0.15),
-            AppTheme.surfaceContainerLow,
-          ],
-        ),
       ),
       child: Stack(
         children: [
-          // Gradient overlay bottom
+          // Forest background image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/forest.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Mood-tinted + dark gradient overlay
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
                 gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.background.withValues(alpha: 0.8),
-                    Colors.transparent,
+                    moodColor.withValues(alpha: 0.25),
+                    AppTheme.background.withValues(alpha: 0.88),
                   ],
-                  stops: const [0.0, 0.6],
+                  stops: const [0.0, 0.65],
                 ),
               ),
             ),
@@ -355,7 +354,8 @@ class _VibeCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+      ), // Container
+    );   // ClipRRect
   }
 }
 
