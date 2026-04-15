@@ -42,10 +42,13 @@ class NotificationService {
       description: 'Daily mood check-in reminder',
       importance: Importance.high,
     );
-    await _plugin
+    final androidImpl = _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.createNotificationChannel(channel);
+
+    // Request notification permission (required for Android 13+ / API 33+).
+    await androidImpl?.requestNotificationsPermission();
 
     _initialized = true;
   }

@@ -209,11 +209,11 @@ class _MoodSphere extends StatelessWidget {
               gradient: const RadialGradient(
                 center: Alignment(-0.3, -0.3),
                 colors: [
-                  Color(0xFFe9c176),
-                  Color(0xFFc5a059),
-                  AppTheme.background,
+                  Color(0xFFf0d080),  // gold highlight
+                  Color(0xFFc5a059),  // gold mid
+                  Color(0xFF7a5418),  // dark gold edge (no black)
                 ],
-                stops: [0.0, 0.5, 1.0],
+                stops: [0.0, 0.55, 1.0],
               ),
               boxShadow: [
                 BoxShadow(
