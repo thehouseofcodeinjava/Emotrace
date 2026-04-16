@@ -50,6 +50,27 @@ class MoodService {
     return rows.map(MoodEntry.fromMap).toList();
   }
 
+  static Map<DateTime, List<MoodEntry>> groupMoodsByDay(List<MoodEntry> moods) {
+    final grouped = <DateTime, List<MoodEntry>>{};
+    for (final mood in moods) {
+      final key = DateTime(
+          mood.createdAt.year, mood.createdAt.month, mood.createdAt.day);
+      grouped.putIfAbsent(key, () => []).add(mood);
+    }
+    return grouped;
+  }
+
+  static double calculateDailyAverage(
+      DateTime date, List<MoodEntry> moods) {
+    final dayMoods = moods.where((m) =>
+        m.createdAt.year == date.year &&
+        m.createdAt.month == date.month &&
+        m.createdAt.day == date.day).toList();
+    if (dayMoods.isEmpty) return 0.0;
+    final sum = dayMoods.fold<int>(0, (s, m) => s + m.moodScore);
+    return sum / dayMoods.length;
+  }
+
   Future<void> deleteMoodEntry(String id) async {
     await _db.delete('mood_entries', where: 'id = ?', whereArgs: [id]);
   }

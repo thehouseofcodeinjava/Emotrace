@@ -36,6 +36,23 @@ class MoodProvider extends ChangeNotifier {
     }
   }
 
+  List<MoodEntry> get todaysMoods {
+    final today = DateTime.now();
+    return _entries
+        .where((e) =>
+            e.createdAt.year == today.year &&
+            e.createdAt.month == today.month &&
+            e.createdAt.day == today.day)
+        .toList();
+  }
+
+  double get dailyAverage {
+    final moods = todaysMoods;
+    if (moods.isEmpty) return 0.0;
+    final sum = moods.fold<int>(0, (s, e) => s + e.moodScore);
+    return sum / moods.length;
+  }
+
   List<MoodEntry> get recentEntries =>
       _entries.take(AppConstants.recentEntriesCount).toList();
 

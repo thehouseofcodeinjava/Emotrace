@@ -89,7 +89,7 @@ flutter pub get
 
 Expected: resolves without errors, `google_fonts` appears in `pubspec.lock`.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add pubspec.yaml pubspec.lock
@@ -259,15 +259,8 @@ class AppTheme {
 }
 ```
 
-- [ ] **Step 2: Verify compile**
 
-```bash
-flutter analyze
-```
-
-Expected: 0 errors. Warnings about deprecated teal/orange usage are OK — they'll be cleared in Tasks 6–16.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/config/theme.dart
@@ -348,15 +341,10 @@ class AppConstants {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/config/constants.dart
@@ -484,15 +472,8 @@ class _NavTab {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/bottom_nav_bar.dart
@@ -593,15 +574,9 @@ class _MainNavigationState extends State<MainNavigation> {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/main.dart
@@ -1099,15 +1074,8 @@ class _RecentEchoesSection extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/screens/home_screen.dart
@@ -1433,15 +1401,9 @@ class _ReflectionsFieldState extends State<_ReflectionsField> {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/screens/mood_entry_screen.dart
@@ -1705,15 +1667,9 @@ class _InsightCard extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/screens/calendar_screen.dart
@@ -2108,15 +2064,9 @@ class _EmptyInsightsState extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/screens/insights_screen.dart
@@ -2502,15 +2452,7 @@ class _Divider extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
-
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/screens/settings_screen.dart
@@ -2635,15 +2577,8 @@ class MoodScaleWidget extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/mood_scale_widget.dart
@@ -2786,15 +2721,9 @@ class EmotionTagSelector extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/emotion_tag_selector.dart
@@ -2924,13 +2853,8 @@ Also add `import '../config/constants.dart';` if not already present, and remove
 
 - [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors. If `AppColorUtils` reference remains, check for any missed occurrences with `grep -n "AppColorUtils" lib/widgets/calendar_heatmap.dart`.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/calendar_heatmap.dart
@@ -3010,15 +2934,7 @@ decoration: BoxDecoration(
 getTooltipColor: (_) => AppTheme.surfaceContainerHighest,
 ```
 
-- [ ] **Step 2: Verify**
-
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/mood_chart.dart
@@ -3134,15 +3050,7 @@ class MoodEntryCard extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
-
-```bash
-flutter analyze
-```
-
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/mood_entry_card.dart
@@ -3282,15 +3190,9 @@ class StreakCounter extends StatelessWidget {
 }
 ```
 
-- [ ] **Step 2: Verify**
 
-```bash
-flutter analyze
-```
 
-Expected: 0 errors.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add lib/widgets/streak_counter.dart
@@ -3328,7 +3230,7 @@ flutter analyze
 
 Expected: 0 errors. If warnings appear about unused legacy aliases (`teal`, `tealLight`, `orange`) in theme.dart, they are safe to leave or remove — all Sanctuary screens use new tokens now.
 
-- [ ] **Step 3: Check git status is clean**
+- [ ] **Step 2: Check git status is clean**
 
 ```bash
 git status

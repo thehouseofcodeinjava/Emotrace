@@ -121,65 +121,70 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                 color: AppTheme.textSecondary)),
                         const SizedBox(height: 24),
 
-                        // Bento: stability card (1/3) + chart (2/3)
-                        IntrinsicHeight(
-                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Stability score card
-                            Expanded(
-                              flex: 1,
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border(
-                                    left: BorderSide(
-                                      color: AppTheme.primary.withValues(alpha: 0.3),
-                                      width: 3,
-                                    ),
+                        // Mood Trend chart — full width
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Mood Trend',
+                                  style: AppTheme.headlineSerifMedium),
+                              Text('Daily average sentiment',
+                                  style: AppTheme.bodySmall),
+                              const SizedBox(height: 12),
+                              MoodChart(entries: entries),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Stability Score card — full width below chart
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border(
+                              left: BorderSide(
+                                color: AppTheme.primary.withValues(alpha: 0.3),
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('STABILITY SCORE',
+                                  style: AppTheme.labelCaps),
+                              const SizedBox(height: 12),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    insights.stabilityScore > 0
+                                        ? insights.stabilityScore
+                                            .toStringAsFixed(1)
+                                        : insights.averageMood
+                                            .toStringAsFixed(1),
+                                    style: AppTheme.headlineSerif.copyWith(
+                                        color: AppTheme.primary, fontSize: 40),
                                   ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('STABILITY\nSCORE',
-                                        style: AppTheme.labelCaps.copyWith(height: 1.4)),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      insights.stabilityScore > 0
-                                          ? insights.stabilityScore.toStringAsFixed(1)
-                                          : insights.averageMood.toStringAsFixed(1),
-                                      style: AppTheme.headlineSerif.copyWith(
-                                          color: AppTheme.primary,
-                                          fontSize: 40),
-                                    ),
-                                    Text('/10',
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Text('/10',
                                         style: AppTheme.bodySmall.copyWith(
                                             color: AppTheme.textSecondary)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Mood trend chart
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Mood Trend',
-                                      style: AppTheme.headlineSerifMedium),
-                                  Text('Daily average sentiment',
-                                      style: AppTheme.bodySmall),
-                                  const SizedBox(height: 8),
-                                  MoodChart(entries: entries),
+                                  ),
                                 ],
                               ),
-                            ),
-                          ],
-                         ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 28),
 

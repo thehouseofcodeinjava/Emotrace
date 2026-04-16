@@ -22,8 +22,8 @@ class CalendarHeatmap extends StatefulWidget {
 class _CalendarHeatmapState extends State<CalendarHeatmap> {
   late DateTime _displayedMonth;
 
-  // Map<"yyyy-MM-dd", MoodEntry> for O(1) lookup
-  Map<String, MoodEntry> _entryMap = {};
+  // Map<"yyyy-MM-dd", List<MoodEntry>> for O(1) lookup — multiple entries per day
+  Map<String, List<MoodEntry>> _entryMap = {};
 
   @override
   void initState() {
@@ -43,8 +43,22 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     _entryMap = {};
     for (final e in widget.entries) {
       final key = _dayKey(e.createdAt);
-      _entryMap[key] = e;
+      _entryMap.putIfAbsent(key, () => []).add(e);
     }
+  }
+
+  double _dayAverage(List<MoodEntry> entries) {
+    if (entries.isEmpty) return 0.0;
+    final sum = entries.fold<int>(0, (s, e) => s + e.moodScore);
+    return sum / entries.length;
+  }
+
+  Color _heatmapColor(double avg) {
+    if (avg >= 9) return const Color(0xFFFFF8DC); // Cream — excellent
+    if (avg >= 7) return const Color(0xFFFFD700); // Bright gold — good
+    if (avg >= 5) return const Color(0xFF4E7A5F); // Forest green — neutral/moderate
+    if (avg >= 3) return const Color(0xFF8B4545); // Dark crimson — low
+    return const Color(0xFF5D2E2E);                // Very dark red — critical low
   }
 
   String _dayKey(DateTime dt) =>
@@ -205,28 +219,33 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     }
 
     final key = _dayKey(day);
-    final entry = _entryMap[key];
+    final dayEntries = _entryMap[key];
+    final hasEntry = dayEntries != null && dayEntries.isNotEmpty;
     final isToday = AppDateUtils.isToday(day);
 
-    final cellColor = entry != null
-        ? AppTheme.moodColorForScore(entry.moodScore)
+    final avg = hasEntry ? _dayAverage(dayEntries!) : 0.0;
+    final cellColor = hasEntry
+        ? _heatmapColor(avg)
         : AppTheme.surfaceContainerHighest;
+    // Use most-recent entry for detail sheet
+    final topEntry = hasEntry ? dayEntries!.first : null;
+    final hasNotes = hasEntry && dayEntries!.any((e) => e.notes.isNotEmpty);
 
     return GestureDetector(
-      onTap: entry != null ? () => _showEntryDetails(context, entry) : null,
+      onTap: topEntry != null ? () => _showEntryDetails(context, topEntry) : null,
       child: SizedBox(
         width: 32,
         height: 32,
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: entry != null
+            color: hasEntry
                 ? cellColor
                 : AppTheme.surfaceContainerHighest.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(6),
             border: isToday
                 ? Border.all(color: AppTheme.primary, width: 1.5)
-                : entry == null
+                : !hasEntry
                     ? Border.all(
                         color: AppTheme.outlineVariant.withValues(alpha: 0.2),
                         width: 0.5)
@@ -238,8 +257,10 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                 child: Text(
                   '${day.day}',
                   style: TextStyle(
-                    color: entry != null
-                        ? Colors.white.withValues(alpha: 0.9)
+                    color: hasEntry
+                        ? (avg >= 7
+                            ? Colors.black87
+                            : Colors.white.withValues(alpha: 0.9))
                         : AppTheme.textSecondary.withValues(alpha: 0.6),
                     fontSize: 8,
                     fontWeight: FontWeight.w600,
@@ -247,7 +268,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                 ),
               ),
               // Note dot
-              if (entry != null && entry.notes.isNotEmpty)
+              if (hasNotes)
                 Positioned(
                   bottom: 3, left: 0, right: 0,
                   child: Center(
@@ -363,11 +384,11 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
   Widget _buildLegend() {
     final items = [
-      ('1–2', const Color(0xFF93000a)),
-      ('3–4', const Color(0xFFc5a059)),
-      ('5–6', const Color(0xFFb5ccc1)),
-      ('7–8', const Color(0xFF394d45)),
-      ('9–10', const Color(0xFF21342d)),
+      ('1–2', const Color(0xFF5D2E2E)),
+      ('3–4', const Color(0xFF8B4545)),
+      ('5–6', const Color(0xFF4E7A5F)),
+      ('7–8', const Color(0xFFFFD700)),
+      ('9–10', const Color(0xFFFFF8DC)),
     ];
     return Wrap(
       spacing: 12,

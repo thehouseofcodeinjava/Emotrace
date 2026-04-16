@@ -1,6 +1,8 @@
 // Screen: HomeScreen | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// Editorial hero header, bento grid (vibe card + mood sphere), Recent Echoes grid, gold FAB
+// Editorial hero header, vibe card, Netflix mood grid, gold FAB
+
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,8 +12,8 @@ import '../config/constants.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
+import '../providers/insights_provider.dart';
 import '../providers/mood_provider.dart';
-import '../widgets/mood_entry_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,15 +32,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _goToMoodEntry() {
-    final provider = context.read<MoodProvider>();
-    Navigator.pushNamed(context, AppRoutes.moodEntry)
-        .then((_) => provider.loadEntries());
+    final moodProvider = context.read<MoodProvider>();
+    final insightsProvider = context.read<InsightsProvider>();
+    Navigator.pushNamed(context, AppRoutes.moodEntry).then((_) async {
+      await moodProvider.loadEntries();
+      insightsProvider.calculateInsights();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _goToMoodEntry,
+        backgroundColor: const Color(0xFFe9c176),
+        elevation: 2.0,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Color(0xFF412d00), size: 28),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Consumer<MoodProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading && provider.entries.isEmpty) {
@@ -47,68 +60,34 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          return Stack(
-            children: [
-              RefreshIndicator(
-                color: AppTheme.primary,
-                onRefresh: provider.loadEntries,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    _buildAppBar(),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          const SizedBox(height: 8),
-                          _HeroHeader(
-                            currentStreak: provider.currentStreak,
-                          ),
-                          const SizedBox(height: 24),
-                          _BentoGrid(
-                            todaysMood: provider.todaysMood,
-                            recentEntries: provider.entries,
-                            onCheckIn: _goToMoodEntry,
-                          ),
-                          const SizedBox(height: 28),
-                          _RecentEchoesSection(
-                            entries: provider.recentEntries,
-                          ),
-                        ]),
+          return RefreshIndicator(
+            color: AppTheme.primary,
+            onRefresh: provider.loadEntries,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                _buildAppBar(),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const SizedBox(height: 8),
+                      _HeroHeader(
+                        currentStreak: provider.currentStreak,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // Gold FAB — bottom right
-              Positioned(
-                right: 24,
-                bottom: 100,
-                child: GestureDetector(
-                  onTap: _goToMoodEntry,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                      const SizedBox(height: 24),
+                      _VibeCardSection(
+                        todaysMood: provider.todaysMood,
+                        dailyAverage: provider.dailyAverage,
+                        onCheckIn: _goToMoodEntry,
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x40e9c176),
-                          blurRadius: 20,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.add, color: Color(0xFF412d00), size: 28),
+                      const SizedBox(height: 28),
+                      _TodaysMoodGrid(entries: provider.todaysMoods),
+                    ]),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -155,7 +134,7 @@ class _HeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hour = DateTime.now().hour;
-    final greeting = hour < 12 ? 'Good morning,' : hour < 17 ? 'Good afternoon,' : 'Good evening,';
+    final greeting = hour < 6 ? 'Good night,' : hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
     final date = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return Row(
@@ -181,26 +160,24 @@ class _HeroHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.local_fire_department,
+                      color: AppTheme.primary, size: 24),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$currentStreak',
+                    style: AppTheme.headlineSerifMedium.copyWith(
+                        fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primary),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.local_fire_department,
-                    color: Color(0xFF412d00), size: 28),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '$currentStreak',
-                style: AppTheme.headlineSerifMedium.copyWith(
-                    fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primary),
-              ),
-              Text('DAYS', style: AppTheme.labelCaps),
+              const SizedBox(height: 4),
+              Text('DAY STREAK', style: AppTheme.labelCaps),
             ],
           ),
         ),
@@ -209,46 +186,37 @@ class _HeroHeader extends StatelessWidget {
   }
 }
 
-// ─── Bento grid ───────────────────────────────────────────────────────────────
+// ─── Vibe card section (full-width) ──────────────────────────────────────────
 
-class _BentoGrid extends StatelessWidget {
+class _VibeCardSection extends StatelessWidget {
   final MoodEntry? todaysMood;
-  final List<MoodEntry> recentEntries;
+  final double dailyAverage;
   final VoidCallback onCheckIn;
 
-  const _BentoGrid({
+  const _VibeCardSection({
     required this.todaysMood,
-    required this.recentEntries,
+    required this.dailyAverage,
     required this.onCheckIn,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 320,
-      child: Row(
-        children: [
-          // Vibe card — 2/3 width
-          Expanded(
-            flex: 2,
-            child: _VibeCard(entry: todaysMood, onCheckIn: onCheckIn),
-          ),
-          const SizedBox(width: 12),
-          // Mood sphere — 1/3 width
-          Expanded(
-            flex: 1,
-            child: _MoodSphereCard(entries: recentEntries),
-          ),
-        ],
-      ),
+      height: 280,
+      child: _VibeCard(
+          entry: todaysMood, dailyAverage: dailyAverage, onCheckIn: onCheckIn),
     );
   }
 }
 
 class _VibeCard extends StatelessWidget {
   final MoodEntry? entry;
+  final double dailyAverage;
   final VoidCallback onCheckIn;
-  const _VibeCard({required this.entry, required this.onCheckIn});
+  const _VibeCard(
+      {required this.entry,
+      required this.dailyAverage,
+      required this.onCheckIn});
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +227,9 @@ class _VibeCard extends StatelessWidget {
         ? (AppConstants.moodLabels[entry!.moodScore] ?? '')
         : 'Not logged';
     final score = entry?.moodScore;
+    final avgText = dailyAverage > 0
+        ? 'Avg: ${dailyAverage.toStringAsFixed(2)}/10'
+        : null;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
@@ -327,6 +298,12 @@ class _VibeCard extends StatelessWidget {
                   style: AppTheme.headlineSerifMedium.copyWith(
                       color: AppTheme.textPrimary, fontSize: 18),
                 ),
+                if (avgText != null) ...[
+                  const SizedBox(height: 4),
+                  Text(avgText,
+                      style: AppTheme.bodySmall.copyWith(
+                          color: AppTheme.primary)),
+                ],
                 const SizedBox(height: 16),
                 // Check in button
                 GestureDetector(
@@ -359,94 +336,28 @@ class _VibeCard extends StatelessWidget {
   }
 }
 
-class _MoodSphereCard extends StatelessWidget {
+// ─── Today's Mood Grid (Netflix-style 3-column) ───────────────────────────────
+
+const List<String> _moodImages = [
+  'assets/images/gloomy.png',
+  'assets/images/sea.png',
+  'assets/images/sunrise.png',
+  'assets/images/lake.png',
+];
+
+String _randomMoodImage() => _moodImages[Random().nextInt(_moodImages.length)];
+
+class _TodaysMoodGrid extends StatelessWidget {
   final List<MoodEntry> entries;
-  const _MoodSphereCard({required this.entries});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekEntries = entries.where((e) =>
-        now.difference(e.createdAt).inDays < 7).toList();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Weekly\nSky', style: AppTheme.headlineSerifMedium.copyWith(fontSize: 18)),
-            const SizedBox(height: 12),
-            // Ambient orb
-            Center(
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.primary.withValues(alpha: 0.3),
-                      AppTheme.primary.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(Icons.filter_drama,
-                      color: AppTheme.primary, size: 36),
-                ),
-              ),
-            ),
-            const Spacer(),
-            // Mini 5-bar trend
-            if (weekEntries.isNotEmpty)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(5, (i) {
-                  final idx = (weekEntries.length - 5 + i).clamp(0, weekEntries.length - 1);
-                  final score = weekEntries[idx].moodScore;
-                  final barH = 8.0 + (score / 10) * 28;
-                  return Container(
-                    width: 10,
-                    height: barH,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.6 + 0.04 * score),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                    ),
-                  );
-                }),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Recent Echoes section ────────────────────────────────────────────────────
-
-class _RecentEchoesSection extends StatelessWidget {
-  final List<MoodEntry> entries;
-  const _RecentEchoesSection({required this.entries});
+  const _TodaysMoodGrid({required this.entries});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Recent Echoes', style: AppTheme.headlineSerif.copyWith(fontSize: 24)),
-            Text('View All →',
-                style: AppTheme.bodySmall.copyWith(color: AppTheme.primary)),
-          ],
-        ),
+        Text("Today's Moods",
+            style: AppTheme.headlineSerif.copyWith(fontSize: 24)),
         const SizedBox(height: 16),
         if (entries.isEmpty)
           Container(
@@ -458,21 +369,113 @@ class _RecentEchoesSection extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Icon(Icons.auto_awesome_outlined, color: AppTheme.primary, size: 32),
+                const Icon(Icons.auto_awesome_outlined,
+                    color: AppTheme.primary, size: 32),
                 const SizedBox(height: 12),
-                Text('No entries yet — start logging!',
-                    style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+                Text("No moods logged today — start your first check-in!",
+                    textAlign: TextAlign.center,
+                    style: AppTheme.bodyMedium
+                        .copyWith(color: AppTheme.textSecondary)),
               ],
             ),
           )
         else
-          ...entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: MoodEntryCard(entry: e),
+          SizedBox(
+            height: 180,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: entries.length,
+              itemBuilder: (context, index) {
+                final e = entries[index];
+                return _MoodHorizontalCard(
+                  image: _randomMoodImage(),
+                  moodName: e.emotionTags.isNotEmpty
+                      ? e.emotionTags.first
+                      : (AppConstants.moodLabels[e.moodScore] ?? ''),
+                  description: e.notes,
+                  score: e.moodScore,
+                );
+              },
             ),
           ),
       ],
+    );
+  }
+}
+
+class _MoodHorizontalCard extends StatelessWidget {
+  final String image;
+  final String moodName;
+  final String description;
+  final int score;
+
+  const _MoodHorizontalCard({
+    required this.image,
+    required this.moodName,
+    required this.description,
+    required this.score,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: AppTheme.outlineVariant.withValues(alpha: 0.25), width: 0.5),
+      ),
+      child: Column(
+        children: [
+          // Image — top
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            child: SizedBox(
+              width: 140,
+              height: 104,
+              child: Image.asset(
+                image,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppTheme.moodColorForScore(score).withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ),
+          // Text — bottom
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    moodName,
+                    style: AppTheme.labelMedium.copyWith(
+                        color: AppTheme.textPrimary, fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: AppTheme.bodySmall.copyWith(fontSize: 9),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
