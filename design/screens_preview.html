@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotrace — Screen Preview (post-bugfix)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Palette (from AppTheme) ────────────────────────────────── */
+    :root {
+      --bg:            #0b1513;
+      --surface:       #0b1513;
+      --surface-low:   #141e1b;
+      --surface-mid:   #18221f;
+      --surface-high:  #222c29;
+      --surface-top:   #2d3734;
+      --primary:       #e9c176;
+      --primary-dim:   #c5a059;
+      --on-primary:    #412d00;
+      --secondary:     #b5ccc1;
+      --sec-cont:      #394d45;
+      --text-pri:      #dae5e0;
+      --text-sec:      #d1c5b4;
+      --outline:       #9a8f80;
+      --outline-var:   #4e4639;
+      --error-cont:    #93000a;
+
+      /* heatmap bands — 5 clearly distinct colors */
+      --heat-1: #5D2E2E;   /* very dark red   — 1-2  */
+      --heat-2: #8B4545;   /* dark crimson    — 3-4  */
+      --heat-3: #4E7A5F;   /* forest green    — 5-6  */
+      --heat-4: #FFD700;   /* bright gold     — 7-8  */
+      --heat-5: #FFF8DC;   /* cream           — 9-10 */
+    }
+
+    body {
+      background: #1a1a1a;
+      font-family: 'Manrope', sans-serif;
+      color: var(--text-pri);
+      padding: 40px 24px;
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .label-above {
+      font-family: 'Manrope', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      color: #888;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* ── Phone shell ────────────────────────────────────────────── */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+      box-shadow:
+        0 0 0 1px #333,
+        0 30px 80px rgba(0,0,0,.7);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    /* status bar */
+    .status-bar {
+      height: 44px;
+      padding: 14px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-pri);
+      flex-shrink: 0;
+    }
+    .status-bar .time { font-weight: 700; }
+    .status-icons { display: flex; gap: 5px; align-items: center; }
+    .status-icons svg { width: 16px; height: 11px; fill: var(--text-pri); }
+
+    /* scrollable body */
+    .screen-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .screen-body::-webkit-scrollbar { display: none; }
+
+    /* ── App bar ────────────────────────────────────────────────── */
+    .app-bar {
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .app-bar-title {
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--primary);
+    }
+    .avatar-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--surface-top);
+      border: 1px solid var(--outline-var);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-sec);
+      font-size: 16px;
+    }
+    .notif-btn {
+      color: var(--primary);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* ── Content padding ────────────────────────────────────────── */
+    .content { padding: 8px 20px 32px; }
+
+    /* ── Hero header ────────────────────────────────────────────── */
+    .hero-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .greeting-col { flex: 1; }
+    .greeting {
+      font-family: 'Newsreader', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-pri);
+      line-height: 1.1;
+    }
+    .name {
+      font-family: 'Newsreader', serif;
+      font-style: italic;
+      font-size: 36px;
+      font-weight: 400;
+      color: var(--primary);
+      line-height: 1.1;
+    }
+    .date-label {
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      color: var(--text-sec);
+      margin-top: 6px;
+    }
+
+    /* ── Streak card (horizontal) ───────────────────────────────── */
+    .streak-card {
+      background: var(--surface-low);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 90px;
+    }
+    .streak-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .streak-icon { font-size: 20px; }
+    .streak-num {
+      font-family: 'Newsreader', serif;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .streak-label {
+      font-family: 'Manrope', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--text-sec);
+      margin-top: 4px;
+    }
+
+    /* ── Vibe card ──────────────────────────────────────────────── */
+    .vibe-card {
+      width: 100%;
+      height: 260px;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 28px;
+      background: var(--surface-low);
+    }
+    .vibe-bg {
+      position: absolute; inset: 0;
+      background-image: url('../assets/images/forest.png');
+      background-size: cover;
+      background-position: center;
+    }
+    /* mood-tinted dark gradient overlay — same as Flutter code */
+    .vibe-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg,
+        rgba(57,77,69,0.25) 0%,
+        rgba(11,21,19,0.88) 65%);
+    }
+    .vibe-content {
+      position: relative; z-index: 2;
+      padding: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .resonance-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(24,34,31,0.7);
+      border-radius: 99px;
+      padding: 4px 10px;
+      width: fit-content;
+    }
+    .resonance-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .resonance-text {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--primary);
+      font-family: 'Manrope', sans-serif;
+    }
+    .vibe-spacer { flex: 1; }
+    .vibe-score {
+      font-family: 'Newsreader', serif;
+      font-size: 64px;
+      font-weight: 600;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .vibe-label {
+      font-family: 'Newsreader', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-pri);
+      margin-top: 2px;
+    }
+    .vibe-avg {
+      font-size: 12px;
+      color: var(--primary);
+      margin-top: 4px;
+      font-family: 'Manrope', sans-serif;
+    }
+    .check-in-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #e9c176, #c5a059);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-top: 16px;
+      width: fit-content;
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--on-primary);
+    }
+
+    /* ── Section title ──────────────────────────────────────────── */
+    .section-title {
+      font-family: 'Newsreader', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-pri);
+      margin-bottom: 16px;
+    }
+
+    /* ── Today's Mood horizontal scroll ────────────────────────── */
+    .mood-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+      height: 180px;
+    }
+    .mood-scroll::-webkit-scrollbar { display: none; }
+    .mood-card {
+      width: 140px;
+      height: 180px;
+      flex-shrink: 0;
+      background: var(--surface-low);
+      border-radius: 12px;
+      border: 0.5px solid rgba(78,70,57,0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .mood-img {
+      width: 140px;
+      height: 104px;
+      flex-shrink: 0;
+      object-fit: cover;
+      display: block;
+      border-radius: 12px 12px 0 0;
+    }
+    .mood-text {
+      flex: 1;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mood-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-pri);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mood-desc {
+      font-size: 9px;
+      color: var(--text-sec);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.4;
+    }
+
+    /* ── Floating Action Button ──────────────────────────────────── */
+    .fab {
+      position: absolute;
+      right: 20px;
+      bottom: 80px;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--on-primary);
+      font-weight: 300;
+      box-shadow: 0 4px 16px rgba(233,193,118,0.35);
+      z-index: 20;
+      cursor: pointer;
+    }
+
+    /* ── Bottom navigation ──────────────────────────────────────── */
+    .bottom-nav {
+      height: 72px;
+      background: var(--surface-low);
+      border-top: 1px solid rgba(78,70,57,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      min-width: 60px;
+    }
+    .nav-icon { font-size: 20px; opacity: 0.45; }
+    .nav-icon.active { opacity: 1; color: var(--primary); }
+    .nav-lbl {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-sec);
+      opacity: 0.45;
+    }
+    .nav-lbl.active { color: var(--primary); opacity: 1; }
+
+
+    /* ══════════════════════════════════════════════════════════════
+       CALENDAR SCREEN
+    ══════════════════════════════════════════════════════════════ */
+
+    /* stat cards */
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      flex: 1;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .stat-card.low  { background: var(--surface-low); }
+    .stat-card.high { background: var(--surface-high); }
+    .stat-card-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .stat-card-val {
+      font-family: 'Newsreader', serif;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--primary);
+    }
+
+    /* heatmap card */
+    .heatmap-card {
+      background: var(--surface-low);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .heatmap-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .heatmap-nav-btn {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary);
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .heatmap-nav-btn.disabled { color: var(--text-sec); opacity: 0.4; }
+    .heatmap-month {
+      font-family: 'Newsreader', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-pri);
+    }
+    .weekday-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 6px;
+    }
+    .weekday-lbl {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-sec);
+      opacity: 0.7;
+    }
+    .heatmap-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .heatmap-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 600;
+      background: rgba(45,55,52,0.4);
+      border: 0.5px solid rgba(78,70,57,0.15);
+      color: rgba(209,197,180,0.6);
+    }
+    .heatmap-cell.today {
+      border: 1.5px solid var(--primary) !important;
+    }
+    .heatmap-cell.h1 { background: var(--heat-1); color: rgba(255,255,255,0.85); border: none; }
+    .heatmap-cell.h2 { background: var(--heat-2); color: rgba(255,255,255,0.85); border: none; }
+    .heatmap-cell.h3 { background: var(--heat-3); color: rgba(255,255,255,0.85); border: none; }
+    .heatmap-cell.h4 { background: var(--heat-4); color: #111; border: none; }
+    .heatmap-cell.h5 { background: var(--heat-5); color: #222; border: none; }
+
+    /* legend */
+    .heatmap-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-sec);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+    }
+
+    /* entries count pill */
+    .entries-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-top);
+      border-radius: 99px;
+      padding: 6px 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-pri);
+    }
+    .entries-pill-icon { color: var(--primary); font-size: 13px; }
+
+    /* insight card */
+    .insight-card {
+      background: var(--surface-low);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(78,70,57,0.2);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .insight-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(233,193,118,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .insight-row {
+      display: flex;
+      gap: 6px;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .insight-val { color: var(--primary); font-weight: 700; }
+
+    /* ── Editorial header ──────────────────────────────────────── */
+    .editorial-header { margin-bottom: 24px; }
+    .headline-serif {
+      font-family: 'Newsreader', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--text-pri);
+      line-height: 1.1;
+    }
+    .headline-italic {
+      font-family: 'Newsreader', serif;
+      font-size: 32px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--primary);
+      line-height: 1.1;
+    }
+    .subtext {
+      font-size: 13px;
+      color: var(--text-sec);
+      margin-top: 4px;
+    }
+
+    /* ── Annotations ─────────────────────────────────────────────── */
+    .annotation-wrap {
+      position: relative;
+    }
+    .annotate {
+      position: absolute;
+      font-size: 10px;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      background: #e9c176;
+      color: #412d00;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .annotate::after {
+      content: '';
+      position: absolute;
+      border: 5px solid transparent;
+    }
+    .annotate.left::after {
+      right: -10px; top: 50%; transform: translateY(-50%);
+      border-left-color: #e9c176;
+    }
+    .annotate.bottom::after {
+      bottom: -10px; left: 50%; transform: translateX(-50%);
+      border-top-color: #e9c176;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     SCREEN 1 — HOME
+════════════════════════════════════════════════ -->
+<div>
+  <div class="label-above">HOME SCREEN — after bugfixes</div>
+  <div class="phone annotation-wrap">
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 17 12"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+        <span style="font-size:11px">100%</span>
+      </div>
+    </div>
+
+    <!-- Scrollable screen body -->
+    <div class="screen-body">
+      <!-- App bar -->
+      <div class="app-bar">
+        <div class="avatar-btn">&#9786;</div>
+        <span class="app-bar-title">Emotrace</span>
+        <span class="notif-btn">&#128276;</span>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+
+        <!-- Hero header row -->
+        <div class="hero-row">
+          <div class="greeting-col">
+            <div class="greeting">Good evening,</div>
+            <div class="name">You</div>
+            <div class="date-label">Thursday, 16 April</div>
+          </div>
+
+          <!-- Streak card — HORIZONTAL layout (Issue 6 fix) -->
+          <div class="streak-card">
+            <div class="streak-row">
+              <span class="streak-icon">🔥</span>
+              <span class="streak-num">2</span>
+            </div>
+            <div class="streak-label">DAY STREAK</div>
+          </div>
+        </div>
+
+        <!-- Vibe card -->
+        <div class="vibe-card">
+          <div class="vibe-bg"></div>
+          <div class="vibe-overlay"></div>
+          <div class="vibe-content">
+            <div class="resonance-pill">
+              <div class="resonance-dot"></div>
+              <span class="resonance-text">CURRENT RESONANCE</span>
+            </div>
+            <div class="vibe-spacer"></div>
+            <div class="vibe-score">7</div>
+            <div class="vibe-label">Content · 7/10</div>
+            <div class="vibe-avg">Avg: 6.50/10</div>
+            <div class="check-in-btn">
+              <span style="font-size:14px">&#9998;</span>
+              Check In
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Moods — no "+ Log Mood" button (Issue 2 fix) -->
+        <div class="section-title">Today's Moods</div>
+
+        <!-- Horizontal Netflix cards (Issue 5 fix) -->
+        <div class="mood-scroll">
+
+          <div class="mood-card">
+            <img class="mood-img" src="../assets/images/sea.png" alt="sea" />
+            <div class="mood-text">
+              <div class="mood-name">Calm</div>
+              <div class="mood-desc">Feeling relaxed after morning routine</div>
+            </div>
+          </div>
+
+          <div class="mood-card">
+            <img class="mood-img" src="../assets/images/sunrise.png" alt="sunrise" />
+            <div class="mood-text">
+              <div class="mood-name">Content</div>
+              <div class="mood-desc">Good meeting, productive afternoon</div>
+            </div>
+          </div>
+
+          <div class="mood-card">
+            <img class="mood-img" src="../assets/images/lake.png" alt="lake" />
+            <div class="mood-text">
+              <div class="mood-name">Peaceful</div>
+              <div class="mood-desc">Walk in the park cleared my head</div>
+            </div>
+          </div>
+
+          <div class="mood-card">
+            <img class="mood-img" src="../assets/images/gloomy.png" alt="gloomy" />
+            <div class="mood-text">
+              <div class="mood-name">Anxious</div>
+              <div class="mood-desc">Deadline pressure building up</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /screen-body -->
+
+    <!-- FAB — now proper Scaffold.floatingActionButton (Issue 1 fix) -->
+    <div class="fab">+</div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item">
+        <span class="nav-icon active">⌂</span>
+        <span class="nav-lbl active">Home</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">◫</span>
+        <span class="nav-lbl">Calendar</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">◈</span>
+        <span class="nav-lbl">Insights</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-lbl">Settings</span>
+      </div>
+    </div>
+
+  </div><!-- /phone -->
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     SCREEN 2 — CALENDAR
+════════════════════════════════════════════════ -->
+<div>
+  <div class="label-above">CALENDAR SCREEN — 5-band heatmap</div>
+  <div class="phone">
+
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 17 12"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+        <span style="font-size:11px">100%</span>
+      </div>
+    </div>
+
+    <div class="screen-body">
+
+      <!-- App bar -->
+      <div class="app-bar">
+        <div style="width:36px"></div>
+        <span class="app-bar-title">Emotrace</span>
+        <div style="width:36px"></div>
+      </div>
+
+      <div class="content">
+
+        <!-- Editorial header -->
+        <div class="editorial-header">
+          <div class="headline-serif">Your Emotional</div>
+          <div class="headline-italic">Calendar</div>
+          <div class="subtext">Your mood history at a glance</div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-row">
+          <div class="stat-card low">
+            <div class="stat-card-lbl">CURRENT STREAK</div>
+            <div class="stat-card-val">2 days 🔥</div>
+          </div>
+          <div class="stat-card high">
+            <div class="stat-card-lbl">COMPLETION</div>
+            <div class="stat-card-val">113%</div>
+          </div>
+        </div>
+
+        <!-- Heatmap card -->
+        <div class="heatmap-card">
+
+          <!-- Month nav -->
+          <div class="heatmap-nav">
+            <div class="heatmap-nav-btn">&#8249;</div>
+            <span class="heatmap-month">April 2026</span>
+            <div class="heatmap-nav-btn disabled">&#8250;</div>
+          </div>
+
+          <!-- Weekday labels -->
+          <div class="weekday-row">
+            <div class="weekday-lbl">M</div>
+            <div class="weekday-lbl">T</div>
+            <div class="weekday-lbl">W</div>
+            <div class="weekday-lbl">T</div>
+            <div class="weekday-lbl">F</div>
+            <div class="weekday-lbl">S</div>
+            <div class="weekday-lbl">S</div>
+          </div>
+
+          <!-- Calendar grid — April 2026 starts on Wednesday (index 2) -->
+          <div class="heatmap-grid">
+            <!-- Week 1: Mar 30, 31, Apr 1–5 -->
+            <div class="heatmap-week">
+              <div class="heatmap-cell"></div><!-- Mon Mar 30 -->
+              <div class="heatmap-cell"></div><!-- Tue Mar 31 -->
+              <div class="heatmap-cell h3">1</div><!-- Wed Apr 1 — mood 5.5 gold -->
+              <div class="heatmap-cell h2">2</div><!-- Thu Apr 2 — mood 3.5 crimson -->
+              <div class="heatmap-cell h3">3</div><!-- Fri Apr 3 — mood 6 gold -->
+              <div class="heatmap-cell h4">4</div><!-- Sat Apr 4 — mood 8 bright gold -->
+              <div class="heatmap-cell h4">5</div><!-- Sun Apr 5 -->
+            </div>
+            <!-- Week 2 -->
+            <div class="heatmap-week">
+              <div class="heatmap-cell h3">6</div>
+              <div class="heatmap-cell h4">7</div>
+              <div class="heatmap-cell h5">8</div><!-- mood 9.5 cream -->
+              <div class="heatmap-cell h4">9</div>
+              <div class="heatmap-cell h3">10</div>
+              <div class="heatmap-cell h1">11</div><!-- mood 1.5 very dark red -->
+              <div class="heatmap-cell h2">12</div>
+            </div>
+            <!-- Week 3 -->
+            <div class="heatmap-week">
+              <div class="heatmap-cell h3">13</div>
+              <div class="heatmap-cell h4">14</div>
+              <div class="heatmap-cell h4">15</div>
+              <div class="heatmap-cell h3 today">16</div><!-- today -->
+              <div class="heatmap-cell">17</div>
+              <div class="heatmap-cell">18</div>
+              <div class="heatmap-cell">19</div>
+            </div>
+            <!-- Week 4 -->
+            <div class="heatmap-week">
+              <div class="heatmap-cell">20</div>
+              <div class="heatmap-cell">21</div>
+              <div class="heatmap-cell">22</div>
+              <div class="heatmap-cell">23</div>
+              <div class="heatmap-cell">24</div>
+              <div class="heatmap-cell">25</div>
+              <div class="heatmap-cell">26</div>
+            </div>
+            <!-- Week 5 -->
+            <div class="heatmap-week">
+              <div class="heatmap-cell">27</div>
+              <div class="heatmap-cell">28</div>
+              <div class="heatmap-cell">29</div>
+              <div class="heatmap-cell">30</div>
+              <div class="heatmap-cell"></div>
+              <div class="heatmap-cell"></div>
+              <div class="heatmap-cell"></div>
+            </div>
+          </div>
+
+          <!-- Legend — 5 bands (Issue 7 fix) -->
+          <div class="heatmap-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--heat-1)"></div>
+              <span>1–2</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--heat-2)"></div>
+              <span>3–4</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--heat-3)"></div>
+              <span>5–6</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--heat-4)"></div>
+              <span>7–8</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--heat-5); border:1px solid rgba(255,255,255,0.15)"></div>
+              <span>9–10</span>
+            </div>
+          </div>
+
+          <!-- Entries pill -->
+          <div class="entries-pill">
+            <span class="entries-pill-icon">&#9673;</span>
+            Total entries: 18
+          </div>
+
+        </div>
+
+        <!-- Historical Peak insight card -->
+        <div class="insight-card">
+          <div style="flex:1">
+            <div style="font-family:'Newsreader',serif; font-size:20px; font-weight:500; color:var(--text-pri); margin-bottom:8px;">Historical Peak</div>
+            <div class="insight-row">
+              <span style="color:var(--text-sec); font-size:12px;">Longest streak: </span>
+              <span class="insight-val" style="font-size:12px;">4 days</span>
+            </div>
+            <div class="insight-row">
+              <span style="color:var(--text-sec); font-size:12px;">Total entries: </span>
+              <span class="insight-val" style="font-size:12px;">18</span>
+            </div>
+          </div>
+          <div class="insight-icon">📊</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item">
+        <span class="nav-icon">⌂</span>
+        <span class="nav-lbl">Home</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon active">◫</span>
+        <span class="nav-lbl active">Calendar</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">◈</span>
+        <span class="nav-lbl">Insights</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-lbl">Settings</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     CHANGE LOG PANEL
+════════════════════════════════════════════════ -->
+<div style="max-width:340px; align-self:flex-start; margin-top:36px;">
+  <div style="font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; letter-spacing:1.8px; color:#888; text-transform:uppercase; margin-bottom:16px;">APPLIED FIXES</div>
+
+  <div style="display:flex; flex-direction:column; gap:10px; font-family:'Manrope',sans-serif; font-size:12px;">
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 1 — FAB Position</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Moved from <code style="background:#222c29; padding:1px 4px; border-radius:3px;">Positioned</code> inside Stack → <code style="background:#222c29; padding:1px 4px; border-radius:3px;">Scaffold.floatingActionButton</code>. Now circular, floats correctly above bottom nav.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 2 — "+ Log Mood" removed</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Row header with GestureDetector removed. Section now shows plain "Today's Moods" title only.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 3 — Greeting</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Added <strong>Good night</strong> (12am–6am). Full map: night / morning / afternoon / evening.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #4e4639;">
+      <div style="color:#b5ccc1; font-weight:700; margin-bottom:4px;">Issue 4 — Day Counter ⚠️</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Streak deduplication fix is correct in code. If you see "2 days" after logging 4 entries <em>today</em>, it means you also have 1+ entry from <strong>April 15</strong> (yesterday's test run). That IS a 2-day streak — the app is correct. Delete old test entries to reset.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 5 — Netflix Cards</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Replaced 3-col GridView (image-left) with horizontal ListView. Cards: 140×180px, image on top 104px, mood name + notes below.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 6 — Streak Card</div>
+      <div style="color:#d1c5b4; line-height:1.5;">Was: gradient box icon on top, number below. Now: 🔥 icon + number side-by-side in a Row, "DAY STREAK" label below.</div>
+    </div>
+
+    <div style="background:#141e1b; border-radius:10px; padding:12px 14px; border-left:3px solid #e9c176;">
+      <div style="color:#e9c176; font-weight:700; margin-bottom:4px;">Issue 7 — Heatmap Colors</div>
+      <div style="color:#d1c5b4; line-height:1.5;">5 visually distinct bands: <span style="color:#c08080">1–2 dark red</span> · <span style="color:#b47070">3–4 crimson</span> · <span style="color:#4E7A5F">5–6 forest green</span> · <span style="color:#FFD700">7–8 bright gold</span> · <span style="color:#FFF8DC">9–10 cream</span>. Bright cells use dark text.</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

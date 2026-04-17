@@ -39,3 +39,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/forest.png
+    - assets/images/gloomy.png
+    - assets/images/sea.png
+    - assets/images/sunrise.png
+    - assets/images/lake.png

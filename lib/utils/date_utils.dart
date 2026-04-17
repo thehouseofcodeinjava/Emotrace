@@ -28,14 +28,22 @@ class AppDateUtils {
   static int calculateCurrentStreak(List<DateTime> entryDates) {
     if (entryDates.isEmpty) return 0;
 
-    final sorted = entryDates.toList()..sort((a, b) => b.compareTo(a));
-    int streak = 0;
-    DateTime cursor = DateTime.now();
+    // Deduplicate to unique calendar days before counting
+    final uniqueDays = entryDates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a)); // most-recent first
 
-    for (final date in sorted) {
-      if (isSameDay(date, cursor) || isSameDay(date, cursor.subtract(const Duration(days: 1)))) {
+    int streak = 0;
+    DateTime cursor = DateTime(
+        DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
+    for (final day in uniqueDays) {
+      if (day == cursor ||
+          day == cursor.subtract(const Duration(days: 1))) {
         streak++;
-        cursor = DateTime(date.year, date.month, date.day);
+        cursor = day;
       } else {
         break;
       }

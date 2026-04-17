@@ -1,0 +1,662 @@
+# EMOTRACE: Home Screen & Calendar Hotfix Prompt
+
+**Priority:** HIGH  
+**Session:** Hotfix for UI/UX issues  
+**Date:** April 16, 2026  
+**Scope:** Home screen layout + Calendar heatmap fixes
+
+---
+
+## ISSUE 1: Floating Action Button (FAB) Positioning
+
+**Problem:**
+- Current: FAB is fixed to bottom-right, obstructs mood entry view when scrolling
+- User needs: FAB should float above content, not obstruct mood grid
+
+**Current Behavior:**
+```
+┌──────────────────────┐
+│ Good morning, Piyush │
+│ Day Streak: 4        │
+├──────────────────────┤
+│ Today's Mood         │
+│ ┌──┬──┬──┐          │
+│ │  │  │  │          │
+│ │  │  │  │  [+]← Blocks view!
+│ └──┴──┴──┘          │
+│ ┌──┬──┬──┐          │
+│ │  │  │  │          │
+│ └──┴──┴──┘          │
+```
+
+**Expected Behavior:**
+```
+┌──────────────────────┐
+│ Good morning, Piyush │
+│ Day Streak: 4        │
+├──────────────────────┤
+│ Today's Mood         │
+│ ┌──┬──┬──┐          │
+│ │  │  │  │          │
+│ │  │  │  │    [+]← Floats above, transparent background
+│ └──┴──┴──┘          │
+│ ┌──┬──┬──┐          │
+│ │  │  │  │          │
+│ └──┴──┴──┘          │
+```
+
+**Fix Implementation:**
+
+1. Use `FloatingActionButton` with transparent background:
+```dart
+floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MoodEntryScreen()),
+    );
+  },
+  backgroundColor: Color(0xFFD4AF37), // Gold
+  elevation: 2.0,
+  child: Icon(Icons.add, color: Colors.black, size: 28),
+  shape: CircleBorder(),
+),
+floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+```
+
+2. Ensure it's part of `Scaffold`, not inside `SingleChildScrollView`:
+```dart
+Scaffold(
+  appBar: AppBar(...),
+  body: SingleChildScrollView(
+    child: Column(...), // Mood grid here
+  ),
+  floatingActionButton: FloatingActionButton(...), // Outside body
+)
+```
+
+3. Optional: Make FAB appear only when user scrolls down (hide on scroll):
+```dart
+floatingActionButton: _showFab ? FloatingActionButton(...) : null,
+
+// In scrolling listener:
+void _onScroll() {
+  setState(() {
+    _showFab = _scrollController.offset > 100;
+  });
+}
+```
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 2: Remove "+ Log Mood" Text
+
+**Problem:**
+- Current: Text "+ Log Mood" appears next to "Today's Mood" header
+- User needs: Remove this text completely
+- Keep only the FAB
+
+**Current Structure:**
+```
+Today's Mood    + Log Mood ← DELETE THIS
+┌──┬──┬──┐
+│  │  │  │
+└──┴──┴──┘
+```
+
+**Expected Structure:**
+```
+Today's Mood
+┌──┬──┬──┐
+│  │  │  │
+└──┴──┴──┘
+```
+
+**Fix Implementation:**
+
+Find in `home_screen.dart`:
+```dart
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text('Today\'s Mood'),
+    GestureDetector(
+      onTap: () => Navigator.push(...),
+      child: Text('+ Log Mood'), // ← DELETE THIS ENTIRE GESTUREDETECTOR
+    ),
+  ],
+)
+```
+
+Replace with:
+```dart
+Text(
+  'Today\'s Mood',
+  style: TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  ),
+)
+```
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 3: Dynamic Greeting Based on Time of Day
+
+**Problem:**
+- Current: Always shows "Good morning, Piyush"
+- User needs: Change based on actual time (morning/afternoon/evening)
+
+**Current Behavior:**
+```
+Good morning, Piyush ← Even at 8 PM!
+```
+
+**Expected Behavior:**
+```
+6:00 AM - 11:59 AM  → "Good morning, Piyush"
+12:00 PM - 5:59 PM  → "Good afternoon, Piyush"
+6:00 PM - 11:59 PM  → "Good evening, Piyush"
+12:00 AM - 5:59 AM  → "Good night, Piyush"
+```
+
+**Fix Implementation:**
+
+```dart
+String getGreeting() {
+  final hour = DateTime.now().hour;
+  
+  if (hour >= 6 && hour < 12) {
+    return "Good morning";
+  } else if (hour >= 12 && hour < 18) {
+    return "Good afternoon";
+  } else if (hour >= 18 && hour < 24) {
+    return "Good evening";
+  } else {
+    return "Good night";
+  }
+}
+
+// Usage:
+Text(
+  '${getGreeting()}, Piyush',
+  style: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  ),
+)
+```
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 4: Fix Day Counter Logic (CRITICAL)
+
+**Problem:**
+- Current: Log 5-6 moods on April 16 → Shows "2 days"
+- User needs: Should show "1 day" (April 16)
+- Root cause: Moods not properly grouped by date
+
+**Current Behavior:**
+```
+Input: 
+  Mood 1: April 16, 09:00, score 5
+  Mood 2: April 16, 14:00, score 5
+  Mood 3: April 16, 18:00, score 6
+  Mood 4: April 16, 20:00, score 7
+  Mood 5: April 16, 22:00, score 8
+
+Output: "Day 1, Day 2" ← WRONG (says 2 days)
+```
+
+**Expected Behavior:**
+```
+Output: "Day 1 (April 16)" ← All 5 moods grouped under 1 day
+```
+
+**Root Cause Analysis:**
+The `groupMoodsByDay()` function is not properly extracting only the date part (year, month, day) and ignoring the time component.
+
+**Fix Implementation:**
+
+1. Update `MoodEntry` model to ensure clean date extraction:
+```dart
+class MoodEntry {
+  final String id;
+  final DateTime timestamp;
+  
+  // Extract date without time component
+  DateTime get dateOnly {
+    return DateTime(timestamp.year, timestamp.month, timestamp.day);
+  }
+}
+```
+
+2. Fix `groupMoodsByDay()` in `mood_service.dart`:
+```dart
+Map<DateTime, List<MoodEntry>> groupMoodsByDay(List<MoodEntry> moods) {
+  final grouped = <DateTime, List<MoodEntry>>{};
+  
+  for (final mood in moods) {
+    // Use dateOnly to remove time component
+    final dateKey = mood.dateOnly;
+    
+    if (!grouped.containsKey(dateKey)) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey]!.add(mood);
+  }
+  
+  // Sort by date (newest first)
+  final sorted = Map<DateTime, List<MoodEntry>>.fromEntries(
+    grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key))
+  );
+  
+  return sorted;
+}
+```
+
+3. Update home screen to display correctly:
+```dart
+// Get today's date only
+DateTime today = DateTime(
+  DateTime.now().year,
+  DateTime.now().month,
+  DateTime.now().day,
+);
+
+// Filter moods for today
+List<MoodEntry> todaysMoods = allMoods
+  .where((m) => m.dateOnly == today)
+  .toList();
+
+// Display count (should be 1 day, not multiple)
+Text(
+  'Day 1 (Today) - ${todaysMoods.length} mood${todaysMoods.length > 1 ? 's' : ''}',
+  style: TextStyle(fontSize: 14, color: Colors.grey),
+)
+```
+
+4. Verify in database storage:
+- Ensure `timestamp` is stored with full DateTime object
+- When querying, group by `DateTime(year, month, day)` only
+
+**Testing:**
+- Log 5 moods on April 16 → Should show "Day 1 (1 day)" with all 5 moods
+- Log 3 moods on April 15 → Should show "Day 2 (April 15)" with 3 moods
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 5: Today's Mood Grid Layout - Netflix Style
+
+**Problem:**
+- Current: Side-by-side image + text layout (image left, text right)
+- User needs: Netflix-style horizontal scroll or grid like in Rajat's design
+- Reference: "Recent Echoes" section in Rajat's design shows cards in a horizontal list
+
+**Current Layout (UNWANTED):**
+```
+┌─────────────────────────┐
+│ [Image] │ Mood Name     │
+│         │ Description   │
+└─────────────────────────┘
+```
+
+**Expected Layout (LIKE NETFLIX):**
+```
+← Scroll →
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│          │  │          │  │          │
+│ [Image]  │  │ [Image]  │  │ [Image]  │
+│          │  │          │  │          │
+├──────────┤  ├──────────┤  ├──────────┤
+│ Mood     │  │ Mood     │  │ Mood     │
+│ Name     │  │ Name     │  │ Name     │
+│ Desc...  │  │ Desc...  │  │ Desc...  │
+└──────────┘  └──────────┘  └──────────┘
+```
+
+**Fix Implementation:**
+
+Replace GridView.count with horizontal ListView:
+
+```dart
+Container(
+  height: 280, // Fixed height for horizontal scroll
+  child: ListView.builder(
+    scrollDirection: Axis.horizontal,
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    itemCount: todaysMoods.length,
+    itemBuilder: (context, index) {
+      final mood = todaysMoods[index];
+      final randomImage = getRandomMoodImage();
+      
+      return Container(
+        width: 150, // Card width
+        margin: EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Color(0xFF2d2d2d),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Color(0xFF444444), width: 1),
+        ),
+        child: Column(
+          children: [
+            // IMAGE (top)
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Image.asset(
+                randomImage,
+                width: 150,
+                height: 120,
+                fit: BoxFit.cover,
+              ),
+            ),
+            
+            // TEXT (bottom)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      mood.emotionTag,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Expanded(
+                      child: Text(
+                        mood.notes ?? '',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[400],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+)
+```
+
+**Visual Result:**
+```
+Today's Mood
+← ┌──────┐  ┌──────┐  ┌──────┐ →
+  │ IMG  │  │ IMG  │  │ IMG  │
+  │ Name │  │ Name │  │ Name │
+  └──────┘  └──────┘  └──────┘
+```
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 6: Streak Display - Side by Side
+
+**Problem:**
+- Current: Streak icon on top, number below (vertical stack)
+- User needs: Icon and number side-by-side (horizontal)
+
+**Current Layout (UNWANTED):**
+```
+┌─────────────┐
+│     🔥      │
+│             │
+│      4      │
+│             │
+└─────────────┘
+```
+
+**Expected Layout:**
+```
+┌─────────────┐
+│  🔥  4      │
+│             │
+│  Day Streak │
+└─────────────┘
+```
+
+**Fix Implementation:**
+
+Find the streak widget:
+```dart
+// Current (REMOVE):
+Column(
+  children: [
+    Icon(Icons.local_fire_department, color: Color(0xFFD4AF37)),
+    Text('4'),
+    Text('Day Streak'),
+  ],
+)
+
+// Replace with (NEW):
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Icon(
+      Icons.local_fire_department,
+      color: Color(0xFFD4AF37),
+      size: 24,
+    ),
+    SizedBox(width: 8),
+    Text(
+      '4',
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFFD4AF37),
+      ),
+    ),
+  ],
+),
+SizedBox(height: 4),
+Text(
+  'Day Streak',
+  style: TextStyle(fontSize: 12, color: Colors.grey),
+),
+```
+
+**Result:**
+```
+🔥 4
+Day Streak
+```
+
+**Status:** [ ] Ready to fix
+
+---
+
+## ISSUE 7: Calendar Heatmap Color Scheme & Real-time Update
+
+**Problem:**
+- Current: Colors not distinctive (4-6 and 7-10 both yellow)
+- Expected: Clear visual distinction based on mood score
+- Also: Colors not updating in real-time when new mood logged
+
+**Current (WRONG) Color Scheme:**
+```
+4-6:   #FFD700 (Yellow)
+7-10:  #F5B04C (Dark yellow) ← Can't differentiate!
+```
+
+**Expected Color Scheme (DISTINCTIVE):**
+```
+Score 1-2:   #5D2E2E (Very dark red - Critical low)
+Score 3-4:   #8B4545 (Dark crimson - Low mood)
+Score 5-6:   #D4AF37 (Gold - Neutral/Moderate)
+Score 7-8:   #FFD700 (Bright gold - Good)
+Score 9-10:  #FFF8DC (Very bright cream/gold - Excellent)
+```
+
+**Fix Implementation:**
+
+1. Create distinctive color mapping:
+```dart
+Color getHeatmapColor(double averageMoodScore) {
+  if (averageMoodScore >= 9.0) {
+    return Color(0xFFFFF8DC); // Cream/Very bright gold
+  } else if (averageMoodScore >= 7.0) {
+    return Color(0xFFFFD700); // Bright gold
+  } else if (averageMoodScore >= 5.0) {
+    return Color(0xFFD4AF37); // Gold (neutral)
+  } else if (averageMoodScore >= 3.0) {
+    return Color(0xFF8B4545); // Dark crimson
+  } else {
+    return Color(0xFF5D2E2E); // Very dark red
+  }
+}
+```
+
+2. Update calendar grid to recalculate on mood change:
+```dart
+Consumer(
+  builder: (context, ref, child) {
+    // WATCH mood entries - rebuilds when new mood added
+    final allMoods = ref.watch(moodEntriesProvider);
+    
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
+      itemCount: daysInMonth,
+      itemBuilder: (context, index) {
+        final day = index + 1;
+        final date = DateTime(year, month, day);
+        
+        // Calculate average for this day
+        final dayMoods = allMoods.where((m) => m.dateOnly == date).toList();
+        final average = dayMoods.isEmpty 
+          ? 0.0 
+          : dayMoods.fold<int>(0, (sum, m) => sum + m.moodScore) / dayMoods.length;
+        
+        // Get color based on average
+        final cellColor = getHeatmapColor(average);
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: cellColor,
+            border: Border.all(color: Color(0xFF444444), width: 0.5),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Text(
+              day.toString(),
+              style: TextStyle(
+                color: average > 5 ? Colors.black : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  },
+)
+```
+
+3. Ensure Riverpod provider watches mood entries:
+```dart
+final calendarMoodsProvider = StateNotifierProvider((ref) {
+  return CalendarMoodsNotifier(ref.read(moodServiceProvider));
+});
+
+// The Calendar widget should wrap in Consumer to watch:
+Consumer(
+  builder: (context, ref, child) {
+    ref.watch(moodEntriesProvider); // ← This triggers rebuild when moods change
+    return CalendarHeatmap(...);
+  },
+)
+```
+
+**Testing:**
+- Log mood 5/10 on April 16 → Cell shows Gold
+- Log mood 8/10 on April 16 → Cell updates to Bright Gold instantly
+- Log mood 2/10 on April 15 → Cell shows Dark Crimson
+
+**Status:** [ ] Ready to fix
+
+---
+
+## Summary of Changes
+
+| Issue | Fix | Priority |
+|-------|-----|----------|
+| FAB obstructing view | Move to floating position using `floatingActionButton` | HIGH |
+| "+ Log Mood" text | Remove completely | HIGH |
+| Generic greeting | Add `getGreeting()` time-based logic | MEDIUM |
+| Day counter showing 2 days for 1 day | Fix `groupMoodsByDay()` with `dateOnly` | CRITICAL |
+| Side-by-side card layout | Switch to horizontal ListView (Netflix style) | HIGH |
+| Streak vertical layout | Change to Row (horizontal) | LOW |
+| Heatmap colors not distinctive | New 5-level color scheme | MEDIUM |
+| Heatmap not updating real-time | Add `Consumer` wrapper with `ref.watch()` | HIGH |
+
+---
+
+## Claude Code Execution Order
+
+Execute fixes in this order:
+
+1. **ISSUE 4** - Fix day counter logic first (dependency for display)
+2. **ISSUE 2** - Remove "+ Log Mood" text
+3. **ISSUE 3** - Add time-based greeting
+4. **ISSUE 6** - Fix streak to horizontal layout
+5. **ISSUE 5** - Redesign mood grid to Netflix horizontal style
+6. **ISSUE 1** - Move FAB to floating position
+7. **ISSUE 7** - Update calendar heatmap colors + real-time
+
+---
+
+## File Locations
+
+```
+lib/
+├── screens/
+│   ├── home_screen.dart          ← Issues 1-6
+│   └── calendar_screen.dart      ← Issue 7
+├── services/
+│   ├── mood_service.dart         ← Issue 4
+│   └── ...
+├── widgets/
+│   ├── mood_grid_card.dart       ← Issue 5 (optional)
+│   └── ...
+└── ...
+```
+
+---
+
+**Once all fixes are complete, test each issue with the Testing section provided above.**
+
+---
+
+**Document Version:** 1.0  
+**Created By:** Piyush (Laali)  
+**Date:** April 16, 2026  
+**For:** Emotrace Hotfix Session

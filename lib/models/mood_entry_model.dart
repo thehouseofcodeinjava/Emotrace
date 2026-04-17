@@ -10,6 +10,8 @@ class MoodEntry {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  DateTime get date => DateTime(createdAt.year, createdAt.month, createdAt.day);
+
   const MoodEntry({
     required this.id,
     required this.userId,
