@@ -11,6 +11,7 @@ import '../providers/insights_provider.dart';
 import '../providers/mood_provider.dart';
 import '../services/insight_service.dart';
 import '../services/pdf_service.dart';
+import '../theme/theme_provider.dart';
 import '../widgets/mood_chart.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -56,6 +57,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Consumer2<InsightsProvider, MoodProvider>(
@@ -64,8 +67,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
           final isLoading = insightsProvider.isLoading || moodProvider.isLoading;
 
           if (isLoading && entries.isEmpty) {
-            return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primary));
+            return Center(
+                child: CircularProgressIndicator(color: colors.accent));
           }
 
           final insights = insightsProvider.insights;
@@ -79,7 +82,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
               moodProvider.loadEntries(),
               insightsProvider.calculateInsights(),
             ]),
-            color: AppTheme.primary,
+            color: colors.accent,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -91,12 +94,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   elevation: 0,
                   actions: [
                     _isSharing
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: SizedBox(
                                 width: 20, height: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppTheme.primary)),
+                                    strokeWidth: 2, color: colors.accent)),
                           )
                         : IconButton(
                             icon: const Icon(Icons.share_outlined,
@@ -113,15 +116,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Editorial header
                         Text('Your Patterns',
                             style: AppTheme.headlineSerif.copyWith(fontSize: 36)),
                         Text('last 30 days of reflection',
                             style: AppTheme.bodyMedium.copyWith(
                                 color: AppTheme.textSecondary)),
                         const SizedBox(height: 24),
-
-                        // Mood Trend chart — full width
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -141,9 +141,19 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             ],
                           ),
                         ),
+                        if (entries.length < 5)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Patterns will appear here after about 5 check-ins.',
+                              style: AppTheme.bodySmall.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppTheme.textSecondary),
+                            ),
+                          ),
                         const SizedBox(height: 16),
-
-                        // Stability Score card — full width below chart
+                        _MonthStatCards(entries: entries),
+                        const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -152,7 +162,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border(
                               left: BorderSide(
-                                color: AppTheme.primary.withValues(alpha: 0.3),
+                                color: colors.accent.withValues(alpha: 0.3),
                                 width: 3,
                               ),
                             ),
@@ -173,7 +183,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                                         : insights.averageMood
                                             .toStringAsFixed(1),
                                     style: AppTheme.headlineSerif.copyWith(
-                                        color: AppTheme.primary, fontSize: 40),
+                                        color: colors.accent, fontSize: 40),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 6),
@@ -187,14 +197,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                           ),
                         ),
                         const SizedBox(height: 28),
-
-                        // Pattern cards
                         if (insights.bestDay.isNotEmpty || insights.worstDay.isNotEmpty) ...[
                           _PatternGrid(insights: insights),
                           const SizedBox(height: 28),
                         ],
-
-                        // Emotion frequency
                         if (insights.emotionFrequency.isNotEmpty) ...[
                           Text('Emotion Frequency',
                               style: AppTheme.headlineSerifMedium),
@@ -215,19 +221,91 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 }
 
+class _MonthStatCards extends StatelessWidget {
+  final List<MoodEntry> entries;
+  const _MonthStatCards({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+    final now = DateTime.now();
+
+    final monthEntries = entries.where((e) =>
+        e.createdAt.year == now.year && e.createdAt.month == now.month).toList();
+    final totalThisMonth = monthEntries.length;
+    final avgMood = monthEntries.isNotEmpty
+        ? (monthEntries.fold<int>(0, (s, e) => s + e.moodScore) / monthEntries.length)
+        : 0.0;
+
+    // Most frequent emotion tag
+    final tagCounts = <String, int>{};
+    for (final e in monthEntries) {
+      for (final tag in e.emotionTags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+    String topTag = '—';
+    if (tagCounts.isNotEmpty) {
+      topTag = tagCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+      // Capitalize
+      topTag = topTag[0].toUpperCase() + topTag.substring(1);
+    }
+
+    return Row(
+      children: [
+        _MiniStat(label: 'CHECK-INS', value: '$totalThisMonth', color: colors.accent),
+        const SizedBox(width: 8),
+        _MiniStat(label: 'AVG MOOD', value: avgMood > 0 ? avgMood.toStringAsFixed(1) : '—', color: colors.accent),
+        const SizedBox(width: 8),
+        _MiniStat(label: 'TOP MOOD', value: topTag, color: colors.accent),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _MiniStat({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: AppTheme.headlineSerifMedium.copyWith(
+                fontSize: 20, color: color)),
+            const SizedBox(height: 4),
+            Text(label, style: AppTheme.labelCaps.copyWith(fontSize: 8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PatternGrid extends StatelessWidget {
   final Insights insights;
   const _PatternGrid({required this.insights});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Row(
       children: [
         if (insights.bestDay.isNotEmpty)
           Expanded(
             child: _PatternCard(
               icon: Icons.wb_sunny_outlined,
-              iconColor: AppTheme.primary,
+              iconColor: colors.accent,
               headline: 'You feel better on ${insights.bestDay}s',
               subtext:
                   'Your mood scores peak on ${insights.bestDay}s. Lean into what makes this day great.',
@@ -299,6 +377,7 @@ class _EmotionFrequencyBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (emotionFreq.isEmpty) return const SizedBox.shrink();
+    final colors = context.watch<ThemeProvider>().colors;
     final maxCount = emotionFreq.values.reduce((a, b) => a > b ? a : b);
     final entries = emotionFreq.entries.toList();
 
@@ -322,10 +401,10 @@ class _EmotionFrequencyBars extends StatelessWidget {
                   children: [
                     Text(entry.key.toUpperCase(),
                         style: AppTheme.labelCaps.copyWith(
-                            color: isTop ? AppTheme.primary : AppTheme.textSecondary)),
+                            color: isTop ? colors.accent : AppTheme.textSecondary)),
                     Text('${entry.value}',
                         style: AppTheme.labelCaps.copyWith(
-                            color: isTop ? AppTheme.primary : AppTheme.textSecondary)),
+                            color: isTop ? colors.accent : AppTheme.textSecondary)),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -336,7 +415,7 @@ class _EmotionFrequencyBars extends StatelessWidget {
                     minHeight: 6,
                     backgroundColor: AppTheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isTop ? AppTheme.primary : AppTheme.primaryContainer,
+                      isTop ? colors.accent : colors.accentDim,
                     ),
                   ),
                 ),
@@ -355,13 +434,15 @@ class _EmptyInsightsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_graph_outlined, size: 56, color: AppTheme.primary),
+            Icon(Icons.auto_graph_outlined, size: 56, color: colors.accent),
             const SizedBox(height: 20),
             Text('Your Patterns', style: AppTheme.headlineSerif),
             const SizedBox(height: 10),

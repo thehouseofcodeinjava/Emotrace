@@ -128,6 +128,21 @@ class MoodProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<int> deleteEntriesInRange(DateTime from, DateTime to) async {
+    final count = await _moodService.deleteEntriesInRange(from, to);
+    _entries.removeWhere((e) =>
+        !e.createdAt.isBefore(from) && !e.createdAt.isAfter(to));
+    notifyListeners();
+    return count;
+  }
+
+  Future<int> deleteAllEntries() async {
+    final count = await _moodService.deleteAllEntries();
+    _entries.clear();
+    notifyListeners();
+    return count;
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

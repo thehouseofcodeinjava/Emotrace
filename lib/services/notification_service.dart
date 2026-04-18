@@ -1,6 +1,6 @@
 // Service: NotificationService | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Full impl: Piyush Puri | Date: 13 Apr 2026
-// Daily mood reminder via flutter_local_notifications + timezone.
+// S6 fix: ensure exact alarm permission, improve scheduling robustness
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -22,7 +22,7 @@ class NotificationService {
       final timezoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timezoneName));
     } catch (_) {
-      // Fall back to UTC — notification still fires, just at UTC time.
+      // Fall back to UTC
     }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -35,6 +35,10 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
     );
 
+    final androidImpl = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
     // Create the Android notification channel (required for Android 8+).
     const channel = AndroidNotificationChannel(
       'emotrace_daily',
@@ -42,13 +46,14 @@ class NotificationService {
       description: 'Daily mood check-in reminder',
       importance: Importance.high,
     );
-    final androidImpl = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(channel);
 
     // Request notification permission (required for Android 13+ / API 33+).
     await androidImpl?.requestNotificationsPermission();
+
+    // Request exact alarm permission (required for Android 12+ / API 31+).
+    // Without this, zonedSchedule with exactAlarm silently fails.
+    await androidImpl?.requestExactAlarmsPermission();
 
     _initialized = true;
   }
@@ -56,6 +61,8 @@ class NotificationService {
   /// Schedule a daily repeating notification at [time] ('HH:mm' format).
   /// Cancels any existing schedule first.
   Future<void> scheduleDailyReminder(String time) async {
+    if (!_initialized) await init();
+
     final parts = time.split(':');
     final hour = int.tryParse(parts[0]) ?? 20;
     final minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
@@ -73,7 +80,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _dailyReminderId,
-      'Time to check in 🌿',
+      'Time to check in',
       'How are you feeling today?',
       scheduled,
       const NotificationDetails(
@@ -95,5 +102,13 @@ class NotificationService {
 
   Future<void> cancelDailyReminder() async {
     await _plugin.cancel(_dailyReminderId);
+  }
+
+  /// Check if notification permissions are granted.
+  Future<bool> areNotificationsEnabled() async {
+    final androidImpl = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    return await androidImpl?.areNotificationsEnabled() ?? true;
   }
 }

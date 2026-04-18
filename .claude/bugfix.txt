@@ -1,662 +1,761 @@
-# EMOTRACE: Home Screen & Calendar Hotfix Prompt
+# Emotrace — Home Screen, Theming, Stats & Settings Overhaul
 
-**Priority:** HIGH  
-**Session:** Hotfix for UI/UX issues  
-**Date:** April 16, 2026  
-**Scope:** Home screen layout + Calendar heatmap fixes
+You have full access to the Emotrace codebase. Before implementing anything, read the relevant files to understand the current structure. **Do not guess at file paths or widget names** — inspect the code first and ask me if anything is unclear.
+
+This is a consolidated set of changes from a design review session. Implement them in the order listed. After each major section, run the app and verify visually before moving on.
 
 ---
 
-## ISSUE 1: Floating Action Button (FAB) Positioning
+## Ground rules
 
-**Problem:**
-- Current: FAB is fixed to bottom-right, obstructs mood entry view when scrolling
-- User needs: FAB should float above content, not obstruct mood grid
+1. **Do not break existing functionality.** The Check In button, + FAB, mood entry flow, and Today's Moods grid must continue to work exactly as they do now.
+2. **Preserve the dark luxury aesthetic.** Dark background, Fraunces serif for display text, Inter for body. Gold accent is the current default.
+3. **Read before you write.** Open the current home screen, stats screen, calendar screen, and settings screen files first. Understand how state is currently managed (Provider / Riverpod / Bloc / setState). Match the existing pattern — don't introduce a new state management library.
+4. **Ask before assuming.** If a widget's purpose is unclear or a function's behavior isn't obvious from the code, stop and ask me instead of guessing.
+5. **One commit per section.** Each of the 5 sections below should be its own commit with a clear message.
 
-**Current Behavior:**
-```
-┌──────────────────────┐
-│ Good morning, Piyush │
-│ Day Streak: 4        │
-├──────────────────────┤
-│ Today's Mood         │
-│ ┌──┬──┬──┐          │
-│ │  │  │  │          │
-│ │  │  │  │  [+]← Blocks view!
-│ └──┴──┴──┘          │
-│ ┌──┬──┬──┐          │
-│ │  │  │  │          │
-│ └──┴──┴──┘          │
-```
+---
 
-**Expected Behavior:**
-```
-┌──────────────────────┐
-│ Good morning, Piyush │
-│ Day Streak: 4        │
-├──────────────────────┤
-│ Today's Mood         │
-│ ┌──┬──┬──┐          │
-│ │  │  │  │          │
-│ │  │  │  │    [+]← Floats above, transparent background
-│ └──┴──┴──┘          │
-│ ┌──┬──┬──┐          │
-│ │  │  │  │          │
-│ └──┴──┴──┘          │
-```
+## SECTION 1: Home Screen — Remove numeric score, add contextual one-liner
 
-**Fix Implementation:**
+### What to remove from the "Current Resonance" card on the home screen
 
-1. Use `FloatingActionButton` with transparent background:
+- The large number (e.g., "7")
+- The "Balanced · 7/10" label
+- The "Avg: 8.00/10" text
+
+### What to add in its place
+
+A single contextual one-liner, styled in Fraunces serif italic, ~22px, with a subtle uppercase subline underneath.
+
+### State machine for the one-liner
+
+The line shown depends on the user's data. Implement this as a function (e.g., `String buildResonanceInsight(UserMoodData data)`) that returns the appropriate line based on conditions checked in order:
+
+| Condition | Line shown | Subline |
+|---|---|---|
+| Zero total entries | "A quiet place to notice yourself. Start when you're ready." | "YOUR FIRST CHECK-IN" |
+| 1–2 total entries, same day | "You've checked in {n} {times} today. Keep the thread going." | "DAY 1" |
+| Streak ≥ 3 days, last 7-day avg ≥ 7 | "Your {timeOfDay}s have felt steadier this week." | "{streak} DAYS OF PATTERNS" |
+| Streak ≥ 3 days, last 7-day avg dropped by ≥ 1.5 vs prior week | "Some days weigh more. You showed up anyway." | "{streak} DAY STREAK" |
+| Streak ≥ 3 days, last 7-day avg ≥ 8 consistently | "You've been arriving bright lately." | "{streak} DAYS OF LIGHT" |
+| Streak ≥ 3 days, average in middle range (5–7) | "You've been holding steady." | "{streak} DAYS OF PATTERNS" |
+| Default fallback | "How are you landing today?" | "CURRENT RESONANCE" |
+
+**Notes:**
+- `{timeOfDay}` is "morning" (before 12), "afternoon" (12–17), or "evening" (17+), based on current local time.
+- `{n}` and `{times}` — pluralize correctly: "1 time", "2 times".
+- The italic accent word (e.g., *steadier*, *bright*) should be wrapped in a `TextSpan` with the accent color from the theme provider (see Section 2).
+- Keep the "CURRENT RESONANCE" pill label at the top of the card — don't remove it.
+- Keep the forest background image, the Check In button, and everything else in the card.
+
+---
+
+## SECTION 2: Accent color theming system
+
+Implement a theme system that lets users pick one of 5 accent colors. The dark base stays constant — only accent swaps.
+
+### 2a. Create `lib/theme/accent_theme.dart`
+
 ```dart
-floatingActionButton: FloatingActionButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => MoodEntryScreen()),
-    );
-  },
-  backgroundColor: Color(0xFFD4AF37), // Gold
-  elevation: 2.0,
-  child: Icon(Icons.add, color: Colors.black, size: 28),
-  shape: CircleBorder(),
-),
-floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-```
+import 'package:flutter/material.dart';
 
-2. Ensure it's part of `Scaffold`, not inside `SingleChildScrollView`:
-```dart
-Scaffold(
-  appBar: AppBar(...),
-  body: SingleChildScrollView(
-    child: Column(...), // Mood grid here
-  ),
-  floatingActionButton: FloatingActionButton(...), // Outside body
-)
-```
+enum AccentTheme { gold, rose, sage, sky, lavender }
 
-3. Optional: Make FAB appear only when user scrolls down (hide on scroll):
-```dart
-floatingActionButton: _showFab ? FloatingActionButton(...) : null,
+class AccentColors {
+  final Color accent;
+  final Color accentSoft;
+  final Color accentDim;
+  final Color line;
+  final Color glow;
 
-// In scrolling listener:
-void _onScroll() {
-  setState(() {
-    _showFab = _scrollController.offset > 100;
+  const AccentColors({
+    required this.accent,
+    required this.accentSoft,
+    required this.accentDim,
+    required this.line,
+    required this.glow,
   });
-}
-```
 
-**Status:** [ ] Ready to fix
-
----
-
-## ISSUE 2: Remove "+ Log Mood" Text
-
-**Problem:**
-- Current: Text "+ Log Mood" appears next to "Today's Mood" header
-- User needs: Remove this text completely
-- Keep only the FAB
-
-**Current Structure:**
-```
-Today's Mood    + Log Mood ← DELETE THIS
-┌──┬──┬──┐
-│  │  │  │
-└──┴──┴──┘
-```
-
-**Expected Structure:**
-```
-Today's Mood
-┌──┬──┬──┐
-│  │  │  │
-└──┴──┴──┘
-```
-
-**Fix Implementation:**
-
-Find in `home_screen.dart`:
-```dart
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Text('Today\'s Mood'),
-    GestureDetector(
-      onTap: () => Navigator.push(...),
-      child: Text('+ Log Mood'), // ← DELETE THIS ENTIRE GESTUREDETECTOR
-    ),
-  ],
-)
-```
-
-Replace with:
-```dart
-Text(
-  'Today\'s Mood',
-  style: TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  ),
-)
-```
-
-**Status:** [ ] Ready to fix
-
----
-
-## ISSUE 3: Dynamic Greeting Based on Time of Day
-
-**Problem:**
-- Current: Always shows "Good morning, Piyush"
-- User needs: Change based on actual time (morning/afternoon/evening)
-
-**Current Behavior:**
-```
-Good morning, Piyush ← Even at 8 PM!
-```
-
-**Expected Behavior:**
-```
-6:00 AM - 11:59 AM  → "Good morning, Piyush"
-12:00 PM - 5:59 PM  → "Good afternoon, Piyush"
-6:00 PM - 11:59 PM  → "Good evening, Piyush"
-12:00 AM - 5:59 AM  → "Good night, Piyush"
-```
-
-**Fix Implementation:**
-
-```dart
-String getGreeting() {
-  final hour = DateTime.now().hour;
-  
-  if (hour >= 6 && hour < 12) {
-    return "Good morning";
-  } else if (hour >= 12 && hour < 18) {
-    return "Good afternoon";
-  } else if (hour >= 18 && hour < 24) {
-    return "Good evening";
-  } else {
-    return "Good night";
-  }
-}
-
-// Usage:
-Text(
-  '${getGreeting()}, Piyush',
-  style: TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  ),
-)
-```
-
-**Status:** [ ] Ready to fix
-
----
-
-## ISSUE 4: Fix Day Counter Logic (CRITICAL)
-
-**Problem:**
-- Current: Log 5-6 moods on April 16 → Shows "2 days"
-- User needs: Should show "1 day" (April 16)
-- Root cause: Moods not properly grouped by date
-
-**Current Behavior:**
-```
-Input: 
-  Mood 1: April 16, 09:00, score 5
-  Mood 2: April 16, 14:00, score 5
-  Mood 3: April 16, 18:00, score 6
-  Mood 4: April 16, 20:00, score 7
-  Mood 5: April 16, 22:00, score 8
-
-Output: "Day 1, Day 2" ← WRONG (says 2 days)
-```
-
-**Expected Behavior:**
-```
-Output: "Day 1 (April 16)" ← All 5 moods grouped under 1 day
-```
-
-**Root Cause Analysis:**
-The `groupMoodsByDay()` function is not properly extracting only the date part (year, month, day) and ignoring the time component.
-
-**Fix Implementation:**
-
-1. Update `MoodEntry` model to ensure clean date extraction:
-```dart
-class MoodEntry {
-  final String id;
-  final DateTime timestamp;
-  
-  // Extract date without time component
-  DateTime get dateOnly {
-    return DateTime(timestamp.year, timestamp.month, timestamp.day);
-  }
-}
-```
-
-2. Fix `groupMoodsByDay()` in `mood_service.dart`:
-```dart
-Map<DateTime, List<MoodEntry>> groupMoodsByDay(List<MoodEntry> moods) {
-  final grouped = <DateTime, List<MoodEntry>>{};
-  
-  for (final mood in moods) {
-    // Use dateOnly to remove time component
-    final dateKey = mood.dateOnly;
-    
-    if (!grouped.containsKey(dateKey)) {
-      grouped[dateKey] = [];
-    }
-    grouped[dateKey]!.add(mood);
-  }
-  
-  // Sort by date (newest first)
-  final sorted = Map<DateTime, List<MoodEntry>>.fromEntries(
-    grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key))
+  static const gold = AccentColors(
+    accent: Color(0xFFD4A04A),
+    accentSoft: Color(0xFFE9C98A),
+    accentDim: Color(0xFF8A6D35),
+    line: Color(0x24D4A04A),
+    glow: Color(0x40D4A04A),
   );
-  
-  return sorted;
+
+  static const rose = AccentColors(
+    accent: Color(0xFFD98AA8),
+    accentSoft: Color(0xFFEFB6CE),
+    accentDim: Color(0xFF8F5871),
+    line: Color(0x29D98AA8),
+    glow: Color(0x4DD98AA8),
+  );
+
+  static const sage = AccentColors(
+    accent: Color(0xFFA3C4A0),
+    accentSoft: Color(0xFFC8DCC6),
+    accentDim: Color(0xFF5F7D5C),
+    line: Color(0x29A3C4A0),
+    glow: Color(0x47A3C4A0),
+  );
+
+  static const sky = AccentColors(
+    accent: Color(0xFF8FB8D9),
+    accentSoft: Color(0xFFB8D1E6),
+    accentDim: Color(0xFF547490),
+    line: Color(0x298FB8D9),
+    glow: Color(0x478FB8D9),
+  );
+
+  static const lavender = AccentColors(
+    accent: Color(0xFFB8A4D4),
+    accentSoft: Color(0xFFD1C2E5),
+    accentDim: Color(0xFF746289),
+    line: Color(0x29B8A4D4),
+    glow: Color(0x47B8A4D4),
+  );
+
+  static AccentColors fromEnum(AccentTheme t) {
+    switch (t) {
+      case AccentTheme.gold: return gold;
+      case AccentTheme.rose: return rose;
+      case AccentTheme.sage: return sage;
+      case AccentTheme.sky: return sky;
+      case AccentTheme.lavender: return lavender;
+    }
+  }
+
+  static String displayName(AccentTheme t) {
+    switch (t) {
+      case AccentTheme.gold: return 'Gold';
+      case AccentTheme.rose: return 'Rose';
+      case AccentTheme.sage: return 'Sage';
+      case AccentTheme.sky: return 'Sky';
+      case AccentTheme.lavender: return 'Lavender';
+    }
+  }
 }
 ```
 
-3. Update home screen to display correctly:
-```dart
-// Get today's date only
-DateTime today = DateTime(
-  DateTime.now().year,
-  DateTime.now().month,
-  DateTime.now().day,
-);
+### 2b. Create `lib/theme/theme_provider.dart`
 
-// Filter moods for today
-List<MoodEntry> todaysMoods = allMoods
-  .where((m) => m.dateOnly == today)
-  .toList();
-
-// Display count (should be 1 day, not multiple)
-Text(
-  'Day 1 (Today) - ${todaysMoods.length} mood${todaysMoods.length > 1 ? 's' : ''}',
-  style: TextStyle(fontSize: 14, color: Colors.grey),
-)
-```
-
-4. Verify in database storage:
-- Ensure `timestamp` is stored with full DateTime object
-- When querying, group by `DateTime(year, month, day)` only
-
-**Testing:**
-- Log 5 moods on April 16 → Should show "Day 1 (1 day)" with all 5 moods
-- Log 3 moods on April 15 → Should show "Day 2 (April 15)" with 3 moods
-
-**Status:** [ ] Ready to fix
-
----
-
-## ISSUE 5: Today's Mood Grid Layout - Netflix Style
-
-**Problem:**
-- Current: Side-by-side image + text layout (image left, text right)
-- User needs: Netflix-style horizontal scroll or grid like in Rajat's design
-- Reference: "Recent Echoes" section in Rajat's design shows cards in a horizontal list
-
-**Current Layout (UNWANTED):**
-```
-┌─────────────────────────┐
-│ [Image] │ Mood Name     │
-│         │ Description   │
-└─────────────────────────┘
-```
-
-**Expected Layout (LIKE NETFLIX):**
-```
-← Scroll →
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│          │  │          │  │          │
-│ [Image]  │  │ [Image]  │  │ [Image]  │
-│          │  │          │  │          │
-├──────────┤  ├──────────┤  ├──────────┤
-│ Mood     │  │ Mood     │  │ Mood     │
-│ Name     │  │ Name     │  │ Name     │
-│ Desc...  │  │ Desc...  │  │ Desc...  │
-└──────────┘  └──────────┘  └──────────┘
-```
-
-**Fix Implementation:**
-
-Replace GridView.count with horizontal ListView:
+If the codebase already uses Riverpod or Bloc, adapt accordingly — match the existing pattern instead of introducing Provider. If the codebase uses plain `setState`, introduce `provider: ^6.1.2` and `shared_preferences: ^2.2.3` (or use existing persistence if already set up).
 
 ```dart
-Container(
-  height: 280, // Fixed height for horizontal scroll
-  child: ListView.builder(
-    scrollDirection: Axis.horizontal,
-    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    itemCount: todaysMoods.length,
-    itemBuilder: (context, index) {
-      final mood = todaysMoods[index];
-      final randomImage = getRandomMoodImage();
-      
-      return Container(
-        width: 150, // Card width
-        margin: EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: Color(0xFF2d2d2d),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFF444444), width: 1),
-        ),
-        child: Column(
-          children: [
-            // IMAGE (top)
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: Image.asset(
-                randomImage,
-                width: 150,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
-            ),
-            
-            // TEXT (bottom)
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      mood.emotionTag,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    Expanded(
-                      child: Text(
-                        mood.notes ?? '',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[400],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'accent_theme.dart';
+
+class ThemeProvider extends ChangeNotifier {
+  static const _prefsKey = 'accent_theme';
+
+  AccentTheme _current = AccentTheme.gold;
+  AccentTheme get current => _current;
+  AccentColors get colors => AccentColors.fromEnum(_current);
+
+  ThemeProvider() { _load(); }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_prefsKey);
+    if (saved != null) {
+      _current = AccentTheme.values.firstWhere(
+        (t) => t.name == saved,
+        orElse: () => AccentTheme.gold,
       );
-    },
-  ),
-)
+      notifyListeners();
+    }
+  }
+
+  Future<void> setTheme(AccentTheme t) async {
+    if (_current == t) return;
+    _current = t;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, t.name);
+  }
+}
 ```
 
-**Visual Result:**
-```
-Today's Mood
-← ┌──────┐  ┌──────┐  ┌──────┐ →
-  │ IMG  │  │ IMG  │  │ IMG  │
-  │ Name │  │ Name │  │ Name │
-  └──────┘  └──────┘  └──────┘
-```
+### 2c. Wire it in `main.dart`
 
-**Status:** [ ] Ready to fix
+Wrap the existing app with `ChangeNotifierProvider<ThemeProvider>`. Don't touch the existing `ThemeData` (dark base) — the accent system is **separate** from Flutter's theme.
+
+### 2d. Refactor all hardcoded accent colors
+
+Search the codebase for the current gold hex values (`#D4A04A`, `#E9C98A`, `#8A6D35`, or any variation). Everywhere they appear — home screen, Check In button, FAB, bottom nav active state, streak card, "CURRENT RESONANCE" pill, italic names, insight card borders, etc. — replace with `context.watch<ThemeProvider>().colors.accent` (or the appropriate token: `accentSoft`, `accentDim`, `line`, `glow`).
+
+**Use `context.watch` in `build` methods, `context.read` in callbacks.** Do not use `Provider.of(context)` without specifying `listen`.
+
+### 2e. Important: Do not put accent colors into ThemeData
+
+Keep them as a separate provider. Material widgets reading from `Theme.of(context).primaryColor` will get the dark-mode defaults; our 5 custom semantic tokens stay in `AccentColors`. Two systems, two concerns.
 
 ---
 
-## ISSUE 6: Streak Display - Side by Side
+## SECTION 3: Settings Screen — Make toggles functional + accent selector + date-range delete
 
-**Problem:**
-- Current: Streak icon on top, number below (vertical stack)
-- User needs: Icon and number side-by-side (horizontal)
+The current settings screen has non-functional toggles. Fix them all.
 
-**Current Layout (UNWANTED):**
-```
-┌─────────────┐
-│     🔥      │
-│             │
-│      4      │
-│             │
-└─────────────┘
-```
+### 3a. Add the Accent Theme selector
 
-**Expected Layout:**
-```
-┌─────────────┐
-│  🔥  4      │
-│             │
-│  Day Streak │
-└─────────────┘
-```
+Add a new section in Settings titled "APPEARANCE". Inside, show a horizontal scrollable row of 5 swatches (Gold, Rose, Sage, Sky, Lavender). Each swatch is a 56px circle with the accent color, with the display name below. Tapping a swatch:
+- Calls `context.read<ThemeProvider>().setTheme(theme)`
+- Triggers `HapticFeedback.selectionClick()`
+- Animates the selection border (white, 2px) onto the selected swatch
+- Adds a soft glow (`boxShadow` with `colors.glow`) to the selected swatch
 
-**Fix Implementation:**
+The selection should update live across the app immediately — all screens using `context.watch<ThemeProvider>()` will rebuild.
 
-Find the streak widget:
+### 3b. Notifications toggle
+
+Wire the notifications toggle to an actual state value persisted in SharedPreferences under key `'notifications_enabled'` (default: `true`). On toggle:
+- Save the new value
+- If turning ON: request notification permission via `flutter_local_notifications` (or whichever package is already in use — check `pubspec.yaml`) and schedule the existing reminder flow
+- If turning OFF: cancel all scheduled notifications
+
+If notifications aren't yet implemented in the app, stub the persistence layer now and leave a `// TODO: wire scheduling` comment. Don't fake it.
+
+### 3c. Dark Mode toggle
+
+**Important:** Based on our design discussion, we're NOT implementing light mode. The app is dark-only; users customize via accent color. Remove the "Dark Mode" toggle entirely from the settings screen (or repurpose that row as the accent selector header). Do not leave a dead toggle sitting there.
+
+### 3d. Delete Data — with date range
+
+Replace the current non-functional Delete Data button with a functional flow:
+
+**Tap "Delete Data"** → opens a modal bottom sheet with three options:
+
+1. **Delete entries from a date range**
+   - Shows a date range picker (use `showDateRangePicker` — Flutter built-in)
+   - After selection, shows confirmation: "Delete {n} entries from {startDate} to {endDate}? This cannot be undone."
+   - On confirm, deletes matching entries from the database
+   - Shows a snackbar: "{n} entries deleted"
+
+2. **Delete all mood entries**
+   - Confirmation: "Delete all {totalCount} mood entries? Your streak will reset. This cannot be undone."
+   - On confirm, deletes all entries but keeps the user account/settings
+   - Resets streak counter
+   - Shows snackbar: "All entries deleted"
+
+3. **Reset everything (nuclear)**
+   - Confirmation: "Reset Emotrace completely? This deletes all entries, resets your streak, and clears preferences. This cannot be undone."
+   - On confirm, clears the database + SharedPreferences + resets to default theme (Gold)
+   - Navigates back to the first screen (onboarding or home)
+
+For each confirmation, use `showDialog` with two buttons: "Cancel" (text button, neutral) and "Delete" (text button, red — `Color(0xFFE74C3C)`).
+
+Do not add any "Export first?" step — keep it clean. We can add export later.
+
+### 3e. Settings screen visual polish (small)
+
+While you're in there:
+- Make sure section headers use the accent color (via `context.watch`)
+- The selected swatch should have a smooth 200ms animated border transition
+- Each row should have subtle dividers using `colors.line`
+
+---
+
+## SECTION 4: Stats / Insights Screen — Fix the graph
+
+**Current bug:** The graph only shows data for 1–2 days even when the user has 3+ entries.
+
+### Fix
+
+1. **Read the current stats screen code and the chart library in use** (`fl_chart`, `syncfusion_flutter_charts`, `charts_flutter`, custom painter, etc.). Identify why the x-axis is cutting off data.
+2. The graph should show **all days in the current month**, with the x-axis running from day 1 to the last day of the month (28/29/30/31 depending on month).
+3. For days **before today with no entries**: render a gap / null / no point (not zero — zero would misleadingly imply a low mood).
+4. For days **with entries**: plot the average mood score for that day.
+5. For days **after today**: don't render anything (future is blank).
+6. The y-axis runs from 1 to 10.
+7. Today's date should be visually marked on the x-axis — a subtle vertical accent-colored line or a slightly larger dot for today's data point.
+8. Include a subtle gold/accent gradient fill below the line (use `colors.accent` with opacity 0.15 → 0, top to bottom).
+
+### Specific logic to implement
+
 ```dart
-// Current (REMOVE):
-Column(
-  children: [
-    Icon(Icons.local_fire_department, color: Color(0xFFD4AF37)),
-    Text('4'),
-    Text('Day Streak'),
-  ],
-)
+List<FlSpot> buildMonthData(List<MoodEntry> entries, DateTime now) {
+  final year = now.year;
+  final month = now.month;
+  final daysInMonth = DateTime(year, month + 1, 0).day;
+  final today = now.day;
 
-// Replace with (NEW):
-Row(
-  mainAxisAlignment: MainAxisAlignment.center,
+  // Group entries by day-of-month for the current month
+  final dailyAverages = <int, double>{};
+  for (final e in entries) {
+    if (e.timestamp.year == year && e.timestamp.month == month) {
+      final day = e.timestamp.day;
+      dailyAverages.putIfAbsent(day, () => 0);
+      // Running average logic — collect then average
+    }
+  }
+  // ... compute averages properly ...
+
+  final spots = <FlSpot>[];
+  for (int d = 1; d <= today; d++) {
+    if (dailyAverages.containsKey(d)) {
+      spots.add(FlSpot(d.toDouble(), dailyAverages[d]!));
+    }
+    // Skip days without entries — don't insert zero
+  }
+  return spots;
+}
+```
+
+(Adapt the FlSpot type if using a different chart library.)
+
+Test with these scenarios after implementing:
+- [ ] 1 entry today only → one dot at today's position, x-axis still shows full month
+- [ ] 3 entries across 3 days → 3 dots connected, rest of month blank
+- [ ] 10 entries across 5 days → 5 averaged points
+- [ ] Multiple entries on same day → correctly averaged to one point per day
+
+### Additional stats screen improvements (while you're here)
+
+- If `totalEntries < 5`, show a soft empty-state message below the graph: *"Patterns will appear here after about 5 check-ins."*
+- Below the graph, show three small stat cards: **Total check-ins this month**, **Average mood**, **Most frequent mood** (by tag/label).
+
+---
+
+## SECTION 5: Calendar Screen — Fix the heatmap
+
+**Current bug:** The heatmap color doesn't correctly reflect the average mood for the day. Once a color is set, it doesn't update when new entries change the daily average.
+
+### Root cause to investigate
+
+Likely one of these:
+1. The color is computed **once on entry creation** and stored, instead of **derived on render** from the current day's average.
+2. A caching layer (Provider, Riverpod, or setState) isn't invalidating when new entries are added.
+3. The color bucket thresholds are off.
+
+Read the calendar screen code and trace how the heatmap color is determined. Fix the root cause — don't just patch the symptom.
+
+### Correct logic
+
+Each day cell's color should be computed **at render time** from the current average of all entries for that day:
+
+```dart
+Color heatmapColorForDay(List<MoodEntry> dayEntries, AccentColors accent) {
+  if (dayEntries.isEmpty) {
+    return Colors.white.withOpacity(0.04); // empty day
+  }
+  final avg = dayEntries.map((e) => e.score).reduce((a, b) => a + b) / dayEntries.length;
+
+  // Bucket into 5 intensity levels based on mood score 1–10
+  if (avg >= 9) return accent.accent.withOpacity(1.0);   // radiant
+  if (avg >= 7) return accent.accent.withOpacity(0.75);  // bright
+  if (avg >= 5) return accent.accent.withOpacity(0.5);   // steady
+  if (avg >= 3) return accent.accent.withOpacity(0.3);   // off
+  return accent.accent.withOpacity(0.15);                // low
+}
+```
+
+### Key implementation requirements
+
+1. **Derive color on every build.** When the user adds a new mood entry, the stats and calendar screens should rebuild and recompute heatmap colors. If using Provider, make sure the mood data provider calls `notifyListeners()` after every insert/update/delete. If using Riverpod, make sure the provider invalidates correctly.
+2. **Do not store the color in the database.** Store only the mood scores. The color is a derived/computed value.
+3. **Color should use the current accent theme** — so switching from Gold → Rose in settings should update the heatmap colors across all visible days.
+4. **Include a legend** at the bottom of the calendar: 5 small squares showing the 5 intensity levels with labels (Low, Off, Steady, Bright, Radiant).
+
+### Test scenarios
+
+- [ ] Add one entry of 10 → that day turns full-accent
+- [ ] Add three more entries of 3 on the same day → average drops to 4.75 → color should drop to 0.3 opacity
+- [ ] Add another entry of 10 → average rises to 5.6 → color should be 0.5 opacity
+- [ ] Switch accent theme from Gold to Rose → all cells update to rose tones immediately
+- [ ] Delete all entries for a day → cell returns to the empty/white color
+
+---
+
+---
+
+## SECTION 6: Notifications — Root cause fix
+
+**Current bug:** Notifications don't fire at all. Even when a notification is scheduled 15 minutes ahead, nothing appears.
+
+### Do not patch symptoms — find the root cause
+
+Before writing any fix, investigate in this order and report what you find:
+
+1. **Check `pubspec.yaml`** — which notification package is in use? `flutter_local_notifications`? `awesome_notifications`? Report the exact package and version.
+
+2. **Check `AndroidManifest.xml`** for required permissions:
+   - `POST_NOTIFICATIONS` (required for Android 13+)
+   - `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM` (required for exact timing on Android 12+)
+   - `RECEIVE_BOOT_COMPLETED` (required for notifications to survive device restart)
+   - Relevant `<receiver>` entries for the notification package
+
+3. **Check iOS `Info.plist`** for `UIBackgroundModes` if this is also an iOS build target.
+
+4. **Check initialization code** — is the notification plugin initialized in `main.dart` before `runApp()`? Is the Android notification channel created? Are iOS permissions requested?
+
+5. **Check the scheduling call site** — when the user schedules a notification, is the code actually executing? Add a debug print and verify in the logs.
+
+6. **Check timezone handling** — `flutter_local_notifications` requires `timezone` package initialization (`tz.initializeTimeZones()` and `tz.setLocalLocation(...)`). If this is missing, scheduled notifications silently fail.
+
+7. **Check battery optimization** — on many Indian OEM Android devices (Xiaomi, Oppo, Vivo, Realme, OnePlus), aggressive battery optimization kills scheduled alarms. This is the #1 cause of "notifications don't fire" on Android in the Indian market. The app may need to direct the user to disable battery optimization for Emotrace.
+
+### Diagnose first, then fix
+
+After running through the checklist above, tell me exactly which layer is broken. Don't try to fix all seven at once. Fix the specific root cause.
+
+### Most likely culprits (in order of probability)
+
+1. **Missing `SCHEDULE_EXACT_ALARM` permission** on Android 12+ — scheduled alarms silently fail
+2. **Timezone not initialized** — `flutter_local_notifications` requires explicit timezone setup
+3. **Android notification channel not created** — notifications are posted but suppressed by the OS because no channel exists
+4. **Notification permission never requested** on Android 13+
+5. **Battery optimization killing the scheduled alarm** (requires user-level fix + in-app prompt)
+
+### Required implementation after root cause is found
+
+- Add a permission request flow on first app launch (or on first toggle-on of notifications)
+- Add a "Notification troubleshooting" link in Settings that opens system battery optimization settings for the app (use `permission_handler` or `open_settings` package)
+- After fixing, test by scheduling a notification 1 minute ahead and verifying it fires with the app in background, app closed, and device locked.
+
+### Test scenarios
+
+- [ ] Schedule notification 1 minute ahead with app in foreground → fires
+- [ ] Schedule notification 5 minutes ahead with app in background → fires
+- [ ] Schedule notification 10 minutes ahead with app force-closed → fires
+- [ ] Schedule notification 15 minutes ahead, lock device, wait → fires
+- [ ] Toggle notifications OFF in settings → scheduled notifications cancelled
+- [ ] Toggle notifications ON after being OFF → permission re-requested if needed, scheduling resumes
+
+---
+
+## SECTION 7: Home Screen — Today's Moods grid redesign
+
+**Current problem:** Today's Moods section scrolls horizontally, so logged moods beyond the first two are hidden. When a user logs 5–7 moods in a day, they can't see them at a glance.
+
+**New layout:** Netflix-style grid, 3 cards per row, wrapping to new rows as needed.
+
+### Grid specification
+
+- **3 cards per row** on standard phone widths (360–420dp)
+- **Card aspect ratio: 1:1.25** (slightly taller than wide — feels more premium than pure square)
+- **Gap between cards:** 10dp horizontal, 12dp vertical
+- **Outer horizontal padding:** 20dp (matches other sections)
+- **Wraps to additional rows** as more moods are added
+- **Growth:** no limit on rows. If user logs 9 moods, they see 3 rows of 3. Section height grows with content.
+
+### Use `GridView.builder` with `SliverGridDelegateWithFixedCrossAxisCount`
+
+```dart
+GridView.builder(
+  shrinkWrap: true,
+  physics: const NeverScrollableScrollPhysics(),
+  padding: const EdgeInsets.symmetric(horizontal: 20),
+  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 10,
+    childAspectRatio: 0.8, // 1:1.25 ratio
+  ),
+  itemCount: todaysMoods.length,
+  itemBuilder: (context, i) => MoodCard(mood: todaysMoods[i]),
+)
+```
+
+Do NOT use horizontal scroll. Remove the existing horizontal ListView entirely.
+
+### The + "add another mood" card
+
+The last cell of the grid should always be an "add another" card — same dimensions as a mood card, but styled as an empty state:
+- Dashed border using `accent.line` color (1.5dp)
+- Center icon: `+` in accent color
+- Subtle "Add mood" label below (10px, uppercase, letter-spaced)
+- Tapping it opens the mood entry flow (same as the FAB)
+
+This replaces the need for the separate `+` FAB in the bottom right **only on the home screen**. Keep the FAB for other screens if it exists there. Actually — **remove the bottom-right FAB from the home screen** since the grid has its own add card. This declutters the home screen.
+
+### Mood card visual redesign (fix the "feels off" problem)
+
+The current mood cards feel off for specific reasons. Fix each one:
+
+#### Problem 1: Image + text proportions are cramped
+
+**Current:** Image fills ~60% of card, text area feels squeezed.
+
+**Fix:** Image fills the entire card background. Text overlays at the bottom with a gradient scrim. This gives the card a cinematic, poster-like quality instead of the current "photo sticker with label below" look.
+
+```dart
+Stack(
   children: [
-    Icon(
-      Icons.local_fire_department,
-      color: Color(0xFFD4AF37),
-      size: 24,
+    // Full-card background image with subtle desaturation
+    Positioned.fill(
+      child: ColorFiltered(
+        colorFilter: ColorFilter.mode(
+          Colors.black.withOpacity(0.15),
+          BlendMode.darken,
+        ),
+        child: Image.network(mood.imageUrl, fit: BoxFit.cover),
+      ),
     ),
-    SizedBox(width: 8),
-    Text(
-      '4',
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFFD4AF37),
+    // Bottom gradient scrim for text legibility
+    Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.transparent,
+              Colors.black.withOpacity(0.5),
+              Colors.black.withOpacity(0.9),
+            ],
+            stops: const [0, 0.4, 0.7, 1.0],
+          ),
+        ),
+      ),
+    ),
+    // Time pill top-right
+    Positioned(
+      top: 10, right: 10,
+      child: TimePill(time: mood.loggedAt),
+    ),
+    // Text content bottom
+    Positioned(
+      left: 12, right: 12, bottom: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            mood.name, // Capitalized: "Inspired" not "inspired"
+            style: TextStyle(
+              fontFamily: 'Fraunces',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            mood.note,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.white.withOpacity(0.75),
+              height: 1.3,
+            ),
+          ),
+        ],
       ),
     ),
   ],
-),
-SizedBox(height: 4),
-Text(
-  'Day Streak',
-  style: TextStyle(fontSize: 12, color: Colors.grey),
-),
+)
 ```
 
-**Result:**
-```
-🔥 4
-Day Streak
-```
+#### Problem 2: Mood names are lowercase ("inspired", "calm")
 
-**Status:** [ ] Ready to fix
+**Fix:** Capitalize mood names consistently — "Inspired", "Calm", "Anxious", etc. Either enforce this on save, or capitalize on display using `StringCaseExtensions` / `toBeginningOfSentenceCase`. Prefer enforcing on save so the data is clean.
 
----
+#### Problem 3: Card corners and image corners don't match
 
-## ISSUE 7: Calendar Heatmap Color Scheme & Real-time Update
+**Fix:** The card itself has 16dp rounded corners, and the image inside must clip to the same radius. Use `ClipRRect` as the outer widget with `borderRadius: BorderRadius.circular(16)`.
 
-**Problem:**
-- Current: Colors not distinctive (4-6 and 7-10 both yellow)
-- Expected: Clear visual distinction based on mood score
-- Also: Colors not updating in real-time when new mood logged
+#### Problem 4: Flat cards lack depth
 
-**Current (WRONG) Color Scheme:**
-```
-4-6:   #FFD700 (Yellow)
-7-10:  #F5B04C (Dark yellow) ← Can't differentiate!
-```
+**Fix:** Add a very subtle shadow and a 1px border in `accent.line`:
 
-**Expected Color Scheme (DISTINCTIVE):**
-```
-Score 1-2:   #5D2E2E (Very dark red - Critical low)
-Score 3-4:   #8B4545 (Dark crimson - Low mood)
-Score 5-6:   #D4AF37 (Gold - Neutral/Moderate)
-Score 7-8:   #FFD700 (Bright gold - Good)
-Score 9-10:  #FFF8DC (Very bright cream/gold - Excellent)
-```
-
-**Fix Implementation:**
-
-1. Create distinctive color mapping:
 ```dart
-Color getHeatmapColor(double averageMoodScore) {
-  if (averageMoodScore >= 9.0) {
-    return Color(0xFFFFF8DC); // Cream/Very bright gold
-  } else if (averageMoodScore >= 7.0) {
-    return Color(0xFFFFD700); // Bright gold
-  } else if (averageMoodScore >= 5.0) {
-    return Color(0xFFD4AF37); // Gold (neutral)
-  } else if (averageMoodScore >= 3.0) {
-    return Color(0xFF8B4545); // Dark crimson
-  } else {
-    return Color(0xFF5D2E2E); // Very dark red
-  }
-}
+Container(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: colors.line, width: 1),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.3),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  ),
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: // card content
+  ),
+)
 ```
 
-2. Update calendar grid to recalculate on mood change:
+#### Problem 5: Time pill is generic
+
+**Current:** White pill with black text and no context.
+
+**Fix:** Glass/frosted pill with accent-tinted text, more compact:
+
 ```dart
-Consumer(
-  builder: (context, ref, child) {
-    // WATCH mood entries - rebuilds when new mood added
-    final allMoods = ref.watch(moodEntriesProvider);
-    
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
-      itemCount: daysInMonth,
-      itemBuilder: (context, index) {
-        final day = index + 1;
-        final date = DateTime(year, month, day);
-        
-        // Calculate average for this day
-        final dayMoods = allMoods.where((m) => m.dateOnly == date).toList();
-        final average = dayMoods.isEmpty 
-          ? 0.0 
-          : dayMoods.fold<int>(0, (sum, m) => sum + m.moodScore) / dayMoods.length;
-        
-        // Get color based on average
-        final cellColor = getHeatmapColor(average);
-        
-        return Container(
+ClipRRect(
+  borderRadius: BorderRadius.circular(10),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        DateFormat('h:mm a').format(mood.loggedAt),
+        style: const TextStyle(
+          fontSize: 9,
+          letterSpacing: 0.5,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  ),
+)
+```
+
+#### Problem 6: Tapping a card does nothing useful
+
+**Fix:** Tapping a mood card opens a detail sheet showing the full mood entry — name, note (full text), timestamp, any tags, and an Edit/Delete action. Use `showModalBottomSheet` with rounded top corners and a drag handle.
+
+### The "Add mood" empty-state card
+
+The card at the end of the grid:
+
+```dart
+GestureDetector(
+  onTap: () => Navigator.push(context, MaterialPageRoute(
+    builder: (_) => const MoodEntryScreen(),
+  )),
+  child: Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      color: Colors.white.withOpacity(0.02),
+      border: Border.all(
+        color: colors.line,
+        width: 1.5,
+        style: BorderStyle.solid, // use DashedBorder package if dashed preferred
+      ),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 36, height: 36,
           decoration: BoxDecoration(
-            color: cellColor,
-            border: Border.all(color: Color(0xFF444444), width: 0.5),
-            borderRadius: BorderRadius.circular(4),
+            shape: BoxShape.circle,
+            color: colors.accent.withOpacity(0.12),
           ),
-          child: Center(
-            child: Text(
-              day.toString(),
-              style: TextStyle(
-                color: average > 5 ? Colors.black : Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          child: Icon(Icons.add, color: colors.accent, size: 20),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'ADD MOOD',
+          style: TextStyle(
+            fontSize: 9,
+            letterSpacing: 1.5,
+            color: colors.accentSoft,
+            fontWeight: FontWeight.w600,
           ),
-        );
-      },
-    );
-  },
+        ),
+      ],
+    ),
+  ),
 )
 ```
 
-3. Ensure Riverpod provider watches mood entries:
-```dart
-final calendarMoodsProvider = StateNotifierProvider((ref) {
-  return CalendarMoodsNotifier(ref.read(moodServiceProvider));
-});
+If the user has 0 moods logged today, this "Add mood" card is the ONLY card in the grid — it sits alone in the first cell. No empty-state text needed; the card itself IS the empty state.
 
-// The Calendar widget should wrap in Consumer to watch:
-Consumer(
-  builder: (context, ref, child) {
-    ref.watch(moodEntriesProvider); // ← This triggers rebuild when moods change
-    return CalendarHeatmap(...);
-  },
-)
-```
+### Section header update
 
-**Testing:**
-- Log mood 5/10 on April 16 → Cell shows Gold
-- Log mood 8/10 on April 16 → Cell updates to Bright Gold instantly
-- Log mood 2/10 on April 15 → Cell shows Dark Crimson
-
-**Status:** [ ] Ready to fix
-
----
-
-## Summary of Changes
-
-| Issue | Fix | Priority |
-|-------|-----|----------|
-| FAB obstructing view | Move to floating position using `floatingActionButton` | HIGH |
-| "+ Log Mood" text | Remove completely | HIGH |
-| Generic greeting | Add `getGreeting()` time-based logic | MEDIUM |
-| Day counter showing 2 days for 1 day | Fix `groupMoodsByDay()` with `dateOnly` | CRITICAL |
-| Side-by-side card layout | Switch to horizontal ListView (Netflix style) | HIGH |
-| Streak vertical layout | Change to Row (horizontal) | LOW |
-| Heatmap colors not distinctive | New 5-level color scheme | MEDIUM |
-| Heatmap not updating real-time | Add `Consumer` wrapper with `ref.watch()` | HIGH |
-
----
-
-## Claude Code Execution Order
-
-Execute fixes in this order:
-
-1. **ISSUE 4** - Fix day counter logic first (dependency for display)
-2. **ISSUE 2** - Remove "+ Log Mood" text
-3. **ISSUE 3** - Add time-based greeting
-4. **ISSUE 6** - Fix streak to horizontal layout
-5. **ISSUE 5** - Redesign mood grid to Netflix horizontal style
-6. **ISSUE 1** - Move FAB to floating position
-7. **ISSUE 7** - Update calendar heatmap colors + real-time
-
----
-
-## File Locations
+Change "Today's Moods" header to include a subtle counter:
 
 ```
-lib/
-├── screens/
-│   ├── home_screen.dart          ← Issues 1-6
-│   └── calendar_screen.dart      ← Issue 7
-├── services/
-│   ├── mood_service.dart         ← Issue 4
-│   └── ...
-├── widgets/
-│   ├── mood_grid_card.dart       ← Issue 5 (optional)
-│   └── ...
-└── ...
+Today's Moods    (3)
 ```
 
+Where `(3)` is in `accent.accentSoft` color, smaller font (14px vs 24px for the main title). Gives the user quick feedback on their check-in count.
+
+### Test scenarios
+
+- [ ] 0 moods logged → grid shows only the "Add mood" card
+- [ ] 1 mood logged → grid shows 1 mood card + "Add mood" card (2 cells in first row, 3rd cell empty)
+- [ ] 2 moods logged → grid shows 2 cards + "Add mood" card (fills first row)
+- [ ] 3 moods logged → first row has 3 mood cards, second row starts with "Add mood" card
+- [ ] 5 moods logged → first row has 3, second row has 2 moods + "Add mood"
+- [ ] 8 moods logged → three rows (3, 3, 2 moods + add card)
+- [ ] Tapping a mood card opens detail sheet
+- [ ] Tapping "Add mood" opens mood entry flow
+- [ ] Accent theme change → borders, time pills, add-card icon all update
+- [ ] Bottom-right FAB removed from home screen only
+- [ ] Capitalized mood names throughout
+
 ---
 
-**Once all fixes are complete, test each issue with the Testing section provided above.**
+## Things I want you to add that we haven't explicitly discussed but matter
+
+1. **Haptic feedback** on all primary actions:
+   - Tapping a mood in the entry flow: `HapticFeedback.selectionClick()`
+   - Tapping Check In button: `HapticFeedback.lightImpact()`
+   - Tapping accent swatch: `HapticFeedback.selectionClick()`
+   - Delete confirmation: `HapticFeedback.mediumImpact()`
+
+2. **Smooth 300ms color transitions** on accent swap — use `AnimatedContainer` or `TweenAnimationBuilder` for any widget whose color is tied to the accent. The swap shouldn't feel like a hard jump.
+
+3. **Accessibility:** Make sure the 5 accent swatches have `Semantics` labels (e.g., `"Gold theme, currently selected"`). Screen readers matter.
+
+4. **Empty states** everywhere:
+   - Home screen with 0 entries: different "one-liner" as defined in Section 1
+   - Stats graph with 0 entries: "Your first entry will appear here"
+   - Calendar with 0 entries: normal calendar view, just all cells at empty color
+   - Today's Moods section with 0 entries today: "No check-ins yet today. Tap + to start."
 
 ---
 
-**Document Version:** 1.0  
-**Created By:** Piyush (Laali)  
-**Date:** April 16, 2026  
-**For:** Emotrace Hotfix Session
+## Deliverables checklist
+
+Before you mark this work done, confirm all of these visually in the running app:
+
+- [ ] Home screen shows one-liner insight, no numbers, based on state machine
+- [ ] Italic accent word in the insight is colored correctly per theme
+- [ ] All 5 accent themes work and persist across app restarts
+- [ ] Settings → Accent row shows 5 swatches, selection animates, haptic fires
+- [ ] Notifications toggle persists and actually toggles notifications (or has a clear TODO)
+- [ ] Dark mode toggle removed
+- [ ] Delete Data opens the 3-option sheet; all three options work with real confirmations
+- [ ] Stats graph shows current month's x-axis fully, with correct points plotted
+- [ ] Stats graph handles multiple entries per day correctly (averaged)
+- [ ] Calendar heatmap recolors correctly when entries change
+- [ ] Calendar heatmap recolors when accent theme changes
+- [ ] Calendar has a legend at the bottom
+- [ ] Scheduled notifications actually fire (tested: foreground, background, force-closed, locked)
+- [ ] Notification permission flow works on Android 13+
+- [ ] Notification troubleshooting link in Settings works (opens system battery settings)
+- [ ] Today's Moods uses 3-column grid, wraps to multiple rows, no horizontal scroll
+- [ ] "Add mood" card is always the last cell of the grid
+- [ ] FAB removed from home screen (kept elsewhere if applicable)
+- [ ] Mood cards use full-bleed image with gradient scrim
+- [ ] Mood names are capitalized
+- [ ] Tapping a mood card opens detail sheet
+- [ ] Section counter "(n)" shows next to "Today's Moods" header
+- [ ] Haptics fire on all primary actions
+- [ ] Empty states work across all screens
+
+---
+
+## Final request
+
+After implementation, push each section as a separate commit with these messages:
+
+1. `feat(home): replace numeric resonance score with contextual insight line`
+2. `feat(theme): add 5-color accent theme system with persistence`
+3. `feat(settings): add accent selector, fix toggles, add date-range delete`
+4. `fix(stats): graph now shows full month with correct multi-day plotting`
+5. `fix(calendar): heatmap color now derives from current average, updates live`
+6. `fix(notifications): root cause fix for scheduled notifications not firing`
+7. `feat(home): replace horizontal mood scroll with 3-column grid + redesigned cards`
+
+If you hit any blocker — ambiguous code, missing model field, unclear dependency — **stop and ask me before inventing a solution.** I'd rather answer a clarifying question than debug a fabricated assumption.
+
+Start by reading the current home screen, theme setup, stats screen, calendar screen, and settings screen files. Tell me what you found before writing any code.

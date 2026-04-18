@@ -1,16 +1,16 @@
 // Widget: MoodScaleWidget | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// 10-bar scale chart — replaces emoji number circles
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../config/theme.dart';
+import '../theme/theme_provider.dart';
 
 class MoodScaleWidget extends StatelessWidget {
   final int selectedMood;
   final ValueChanged<int> onMoodSelected;
 
-  // Bell-curve bar heights (index 0 = mood 1, index 9 = mood 10)
   static const _barHeights = [32.0, 38.0, 44.0, 50.0, 56.0, 50.0, 44.0, 56.0, 50.0, 64.0];
 
   const MoodScaleWidget({
@@ -21,6 +21,8 @@ class MoodScaleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -29,7 +31,6 @@ class MoodScaleWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Endpoint labels
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -38,7 +39,6 @@ class MoodScaleWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Bars
           SizedBox(
             height: 72,
             child: Row(
@@ -57,10 +57,10 @@ class MoodScaleWidget extends StatelessWidget {
                     height: isSelected ? barH + 8 : barH,
                     decoration: BoxDecoration(
                       gradient: isSelected
-                          ? const LinearGradient(
+                          ? LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                              colors: [colors.accent, colors.accentDim],
                             )
                           : null,
                       color: isSelected
@@ -72,7 +72,7 @@ class MoodScaleWidget extends StatelessWidget {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: AppTheme.primary.withValues(alpha: 0.4),
+                                color: colors.accent.withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, -4),
                               ),
@@ -85,14 +85,13 @@ class MoodScaleWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Label for selected mood
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 150),
             child: Text(
               AppConstants.moodLabels[selectedMood] ?? '',
               key: ValueKey(selectedMood),
               style: AppTheme.bodyMedium.copyWith(
-                  color: AppTheme.primary, fontWeight: FontWeight.w700),
+                  color: colors.accent, fontWeight: FontWeight.w700),
             ),
           ),
         ],

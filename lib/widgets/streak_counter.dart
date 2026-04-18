@@ -1,10 +1,11 @@
 // Widget: StreakCounter | Author: Piyush Puri | Date: 12 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// Fire icon in gold gradient square, Newsreader bold streak count
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../config/theme.dart';
+import '../theme/theme_provider.dart';
 
 class StreakCounter extends StatelessWidget {
   final int currentStreak;
@@ -19,10 +20,10 @@ class StreakCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = (currentStreak / AppConstants.streakGoal).clamp(0.0, 1.0);
+    final colors = context.watch<ThemeProvider>().colors;
 
     return Row(
       children: [
-        // Current streak card
         Expanded(
           flex: 3,
           child: Container(
@@ -33,21 +34,20 @@ class StreakCounter extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Gold fire icon
                 Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                      colors: [colors.accent, colors.accentDim],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.local_fire_department,
-                    color: Color(0xFF412d00),
+                    color: AppTheme.onPrimary,
                     size: 28,
                   ),
                 ),
@@ -62,7 +62,7 @@ class StreakCounter extends StatelessWidget {
                         currentStreak == 0 ? 'Start today!' : '$currentStreak Days',
                         style: AppTheme.headlineSerifMedium.copyWith(
                             fontSize: 22,
-                            color: AppTheme.primary,
+                            color: colors.accent,
                             fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 8),
@@ -72,8 +72,7 @@ class StreakCounter extends StatelessWidget {
                           value: progress,
                           minHeight: 4,
                           backgroundColor: AppTheme.surfaceContainerHighest,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppTheme.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -87,8 +86,6 @@ class StreakCounter extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-
-        // Longest streak card
         Expanded(
           flex: 2,
           child: Container(
@@ -108,7 +105,7 @@ class StreakCounter extends StatelessWidget {
                   '$longestStreak days',
                   style: AppTheme.headlineSerif.copyWith(
                       fontSize: 28,
-                      color: AppTheme.primary,
+                      color: colors.accent,
                       letterSpacing: -1),
                 ),
               ],
