@@ -21,6 +21,7 @@ dependencies:
   pdf: ^3.10.8
   printing: ^5.13.1
   google_fonts: ^6.2.1
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:

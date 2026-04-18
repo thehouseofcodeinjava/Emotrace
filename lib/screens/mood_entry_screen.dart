@@ -1,6 +1,5 @@
 // Screen: MoodEntryScreen | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// Glow sphere + bar scale + icon grid chips + gold save button
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../config/theme.dart';
 import '../providers/mood_provider.dart';
+import '../theme/theme_provider.dart';
 import '../widgets/emotion_tag_selector.dart';
 import '../widgets/mood_scale_widget.dart';
 
@@ -66,12 +66,13 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Custom header ────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
@@ -94,30 +95,24 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
                           style: AppTheme.headlineSerifMedium),
                     ),
                   ),
-                  const SizedBox(width: 36), // balance the close button
+                  const SizedBox(width: 36),
                 ],
               ),
             ),
-            // ── Scrollable body ──────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Mood sphere
                     _MoodSphere(moodScore: _selectedMood),
                     const SizedBox(height: 28),
-
-                    // Bar scale
                     MoodScaleWidget(
                       selectedMood: _selectedMood,
                       onMoodSelected: (mood) =>
                           setState(() => _selectedMood = mood),
                     ),
                     const SizedBox(height: 32),
-
-                    // Emotion chips
                     Text('REFINE YOUR STATE', style: AppTheme.labelCaps),
                     const SizedBox(height: 12),
                     EmotionTagSelector(
@@ -125,12 +120,8 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
                       onChanged: (e) => setState(() => _selectedEmotions = e),
                     ),
                     const SizedBox(height: 28),
-
-                    // Reflections textarea
                     _ReflectionsField(controller: _notesController),
                     const SizedBox(height: 32),
-
-                    // Save button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -140,8 +131,8 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
                           decoration: BoxDecoration(
                             gradient: _isSaving
                                 ? null
-                                : const LinearGradient(
-                                    colors: [Color(0xFFe9c176), Color(0xFFc5a059)]),
+                                : LinearGradient(
+                                    colors: [colors.accentSoft, colors.accent]),
                             color: _isSaving ? AppTheme.surfaceContainerHigh : null,
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -181,43 +172,42 @@ class _MoodSphere extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
     final label = AppConstants.moodLabels[moodScore] ?? '';
 
     return Center(
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Ambient halo
           Container(
             width: 280, height: 280,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppTheme.primary.withValues(alpha: 0.12),
+                  colors.accent.withValues(alpha: 0.12),
                   Colors.transparent,
                 ],
               ),
             ),
           ),
-          // Sphere
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: 200, height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const RadialGradient(
+              gradient: RadialGradient(
                 center: Alignment(-0.3, -0.3),
                 colors: [
-                  Color(0xFFf0d080),  // gold highlight
-                  Color(0xFFc5a059),  // gold mid
-                  Color(0xFF7a5418),  // dark gold edge (no black)
+                  colors.accentSoft,
+                  colors.accent,
+                  colors.accentDim,
                 ],
-                stops: [0.0, 0.55, 1.0],
+                stops: const [0.0, 0.55, 1.0],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.25),
+                  color: colors.accent.withValues(alpha: 0.25),
                   blurRadius: 60,
                   spreadRadius: 10,
                 ),
@@ -264,6 +254,8 @@ class _ReflectionsFieldState extends State<_ReflectionsField> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Stack(
       children: [
         Focus(
@@ -286,19 +278,18 @@ class _ReflectionsFieldState extends State<_ReflectionsField> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(color: AppTheme.primary, width: 1),
+                borderSide: BorderSide(color: colors.accent, width: 1),
               ),
               contentPadding: const EdgeInsets.all(20),
             ),
           ),
         ),
-        // Edit icon bottom-right
         Positioned(
           right: 16, bottom: 28,
           child: AnimatedOpacity(
             opacity: _focused ? 1.0 : 0.3,
             duration: const Duration(milliseconds: 200),
-            child: const Icon(Icons.edit_note, color: AppTheme.primary, size: 20),
+            child: Icon(Icons.edit_note, color: colors.accent, size: 20),
           ),
         ),
       ],

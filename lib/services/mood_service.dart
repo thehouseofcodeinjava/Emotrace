@@ -88,4 +88,16 @@ class MoodService {
     );
     return rows.map(MoodEntry.fromMap).toList();
   }
+
+  Future<int> deleteEntriesInRange(DateTime from, DateTime to) async {
+    return await _db.delete(
+      'mood_entries',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [from.toIso8601String(), to.toIso8601String()],
+    );
+  }
+
+  Future<int> deleteAllEntries() async {
+    return await _db.db.delete('mood_entries');
+  }
 }

@@ -1,10 +1,11 @@
 // Widget: EmotionTagSelector | Author: Rajat Mahajan | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// 2-column icon grid replaces FilterChip Wrap
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../config/theme.dart';
+import '../theme/theme_provider.dart';
 
 class EmotionTagSelector extends StatelessWidget {
   final List<String> selectedEmotions;
@@ -40,6 +41,7 @@ class EmotionTagSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final atLimit = selectedEmotions.length >= _maxSelections;
+    final colors = context.watch<ThemeProvider>().colors;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -75,14 +77,14 @@ class EmotionTagSelector extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected
-                    ? AppTheme.primary.withValues(alpha: 0.7)
+                    ? colors.accent.withValues(alpha: 0.7)
                     : AppTheme.outlineVariant.withValues(alpha: 0.3),
                 width: isSelected ? 1 : 0.5,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.15),
+                        color: colors.accent.withValues(alpha: 0.15),
                         blurRadius: 8,
                       ),
                     ]
@@ -94,7 +96,7 @@ class EmotionTagSelector extends StatelessWidget {
                   icon,
                   size: 16,
                   color: isSelected
-                      ? AppTheme.primary
+                      ? colors.accent
                       : isDisabled
                           ? AppTheme.textSecondary.withValues(alpha: 0.3)
                           : AppTheme.textSecondary,
@@ -104,7 +106,7 @@ class EmotionTagSelector extends StatelessWidget {
                   emotion,
                   style: AppTheme.bodySmall.copyWith(
                     color: isSelected
-                        ? AppTheme.primary
+                        ? colors.accent
                         : isDisabled
                             ? AppTheme.textSecondary.withValues(alpha: 0.3)
                             : AppTheme.textSecondary,

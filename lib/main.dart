@@ -10,6 +10,7 @@ import 'providers/auth_provider.dart';
 import 'providers/insights_provider.dart';
 import 'providers/mood_provider.dart';
 import 'providers/settings_provider.dart';
+import 'theme/theme_provider.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
@@ -36,10 +37,9 @@ class EmotracApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MoodProvider()),
         ChangeNotifierProvider(create: (_) => InsightsProvider()),
         ChangeNotifierProvider(
-          // loadSettings() fires async in background — UI shows defaults
-          // then rebuilds automatically when settings are loaded from DB.
           create: (_) => SettingsProvider()..loadSettings(),
         ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: MaterialApp(
         title: 'EMOTRACE',

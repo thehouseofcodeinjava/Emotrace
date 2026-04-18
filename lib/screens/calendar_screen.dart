@@ -1,12 +1,12 @@
 // Screen: CalendarScreen | Author: Piyush Puri | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// Stat cards row (streak + completion %), Sanctuary heatmap card, editorial header
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
 import '../providers/mood_provider.dart';
+import '../theme/theme_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/calendar_heatmap.dart';
 
@@ -28,6 +28,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Consumer<MoodProvider>(
@@ -35,8 +37,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           final entries = moodProvider.entries;
 
           if (moodProvider.isLoading && entries.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
+            return Center(
+              child: CircularProgressIndicator(color: colors.accent),
             );
           }
 
@@ -46,7 +48,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           final longestStreak = _calculateLongestStreak(
               entries.map((e) => e.createdAt).toList());
 
-          // Completion % — entries this month / days elapsed this month
           final now = DateTime.now();
           final daysElapsed = now.day;
           final thisMonthEntries = entries.where((e) =>
@@ -57,11 +58,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
           return RefreshIndicator(
             onRefresh: moodProvider.loadEntries,
-            color: AppTheme.primary,
+            color: colors.accent,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // App bar
                 SliverAppBar(
                   pinned: true,
                   backgroundColor: AppTheme.background,
@@ -75,7 +75,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Editorial header
                         Text('Your Emotional', style: AppTheme.headlineSerif),
                         Text('Calendar',
                             style: AppTheme.headlineSerifItalic.copyWith(fontSize: 32)),
@@ -84,14 +83,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             style: AppTheme.bodyMedium.copyWith(
                                 color: AppTheme.textSecondary)),
                         const SizedBox(height: 24),
-
-                        // Stat cards row
                         Row(
                           children: [
                             Expanded(
                               child: _StatCard(
                                 label: 'CURRENT STREAK',
-                                value: '$streak days 🔥',
+                                value: '$streak days',
                                 bg: AppTheme.surfaceContainerLow,
                               ),
                             ),
@@ -106,8 +103,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ],
                         ),
                         const SizedBox(height: 24),
-
-                        // Heatmap card
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -117,8 +112,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           child: CalendarHeatmap(entries: entries),
                         ),
                         const SizedBox(height: 20),
-
-                        // Insight card
                         if (entries.isNotEmpty)
                           _InsightCard(
                             longestStreak: longestStreak,
@@ -165,6 +158,8 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -177,7 +172,7 @@ class _StatCard extends StatelessWidget {
           Text(label, style: AppTheme.labelCaps),
           const SizedBox(height: 8),
           Text(value,
-              style: AppTheme.headlineSerifMedium.copyWith(color: AppTheme.primary)),
+              style: AppTheme.headlineSerifMedium.copyWith(color: colors.accent)),
         ],
       ),
     );
@@ -191,6 +186,8 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -208,22 +205,20 @@ class _InsightCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Text('Longest streak: ',
-                        style: AppTheme.bodySmall),
+                    Text('Longest streak: ', style: AppTheme.bodySmall),
                     Text('$longestStreak days',
                         style: AppTheme.bodySmall.copyWith(
-                            color: AppTheme.primary,
+                            color: colors.accent,
                             fontWeight: FontWeight.w700)),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text('Total entries: ',
-                        style: AppTheme.bodySmall),
+                    Text('Total entries: ', style: AppTheme.bodySmall),
                     Text('$totalEntries',
                         style: AppTheme.bodySmall.copyWith(
-                            color: AppTheme.primary,
+                            color: colors.accent,
                             fontWeight: FontWeight.w700)),
                   ],
                 ),
@@ -233,10 +228,10 @@ class _InsightCard extends StatelessWidget {
           Container(
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.15),
+              color: colors.accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.insights, color: AppTheme.primary, size: 22),
+            child: Icon(Icons.insights, color: colors.accent, size: 22),
           ),
         ],
       ),

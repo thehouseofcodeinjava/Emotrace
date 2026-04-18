@@ -1,9 +1,11 @@
 // Widget: EmotracBottomNavBar | Author: Piyush Puri | Date: 15 Apr 2026
-// Sanctuary frosted glass nav bar — gold gradient active pill, 4 tabs
+// Sanctuary frosted glass nav bar — accent gradient active pill, 4 tabs
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../theme/theme_provider.dart';
 
 class EmotracBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -25,6 +27,7 @@ class EmotracBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final colors = context.watch<ThemeProvider>().colors;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -58,8 +61,8 @@ class EmotracBottomNavBar extends StatelessWidget {
                     ),
                     decoration: isActive
                         ? BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFe9c176), Color(0xFFc5a059)],
+                            gradient: LinearGradient(
+                              colors: [colors.accent, colors.accentDim],
                             ),
                             borderRadius: BorderRadius.circular(20),
                           )
@@ -72,7 +75,7 @@ class EmotracBottomNavBar extends StatelessWidget {
                           size: 20,
                           color: isActive
                               ? AppTheme.onPrimary
-                              : const Color(0xFFc5a059).withValues(alpha: 0.6),
+                              : colors.accentDim.withValues(alpha: 0.6),
                         ),
                         if (isActive) ...[
                           const SizedBox(width: 6),

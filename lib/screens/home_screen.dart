@@ -2,8 +2,6 @@
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
 // Editorial hero header, vibe card, Netflix mood grid, gold FAB
 
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +12,7 @@ import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
 import '../providers/insights_provider.dart';
 import '../providers/mood_provider.dart';
+import '../theme/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,43 +41,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToMoodEntry,
-        backgroundColor: const Color(0xFFe9c176),
-        elevation: 2.0,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Color(0xFF412d00), size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // FAB removed — "Add mood" card in grid replaces it
       body: Consumer<MoodProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading && provider.entries.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
+            return Center(
+              child: CircularProgressIndicator(color: colors.accent),
             );
           }
 
           return RefreshIndicator(
-            color: AppTheme.primary,
+            color: colors.accent,
             onRefresh: provider.loadEntries,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                _buildAppBar(),
+                _buildAppBar(colors),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       const SizedBox(height: 8),
-                      _HeroHeader(
-                        currentStreak: provider.currentStreak,
-                      ),
+                      _HeroHeader(currentStreak: provider.currentStreak),
                       const SizedBox(height: 24),
                       _VibeCardSection(
-                        todaysMood: provider.todaysMood,
-                        dailyAverage: provider.dailyAverage,
+                        provider: provider,
                         onCheckIn: _goToMoodEntry,
                       ),
                       const SizedBox(height: 28),
@@ -94,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  SliverAppBar _buildAppBar() {
+  SliverAppBar _buildAppBar(dynamic colors) {
     return SliverAppBar(
       floating: true,
       snap: true,
@@ -117,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_none, color: AppTheme.primary),
+          icon: Icon(Icons.notifications_none, color: colors.accent),
           onPressed: () {},
         ),
       ],
@@ -133,6 +124,7 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
     final hour = DateTime.now().hour;
     final greeting = hour < 6 ? 'Good night,' : hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
     final date = DateFormat('EEEE, d MMMM').format(DateTime.now());
@@ -145,14 +137,12 @@ class _HeroHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(greeting, style: AppTheme.headlineSerif),
-              Text('You', style: AppTheme.displaySerifItalic.copyWith(fontSize: 36)),
               const SizedBox(height: 6),
               Text(date, style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
             ],
           ),
         ),
         const SizedBox(width: 16),
-        // Streak card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -166,13 +156,13 @@ class _HeroHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.local_fire_department,
-                      color: AppTheme.primary, size: 24),
+                  Icon(Icons.local_fire_department,
+                      color: colors.accent, size: 24),
                   const SizedBox(width: 6),
                   Text(
                     '$currentStreak',
                     style: AppTheme.headlineSerifMedium.copyWith(
-                        fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primary),
+                        fontSize: 22, fontWeight: FontWeight.w900, color: colors.accent),
                   ),
                 ],
               ),
@@ -189,13 +179,11 @@ class _HeroHeader extends StatelessWidget {
 // ─── Vibe card section (full-width) ──────────────────────────────────────────
 
 class _VibeCardSection extends StatelessWidget {
-  final MoodEntry? todaysMood;
-  final double dailyAverage;
+  final MoodProvider provider;
   final VoidCallback onCheckIn;
 
   const _VibeCardSection({
-    required this.todaysMood,
-    required this.dailyAverage,
+    required this.provider,
     required this.onCheckIn,
   });
 
@@ -203,33 +191,113 @@ class _VibeCardSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 280,
-      child: _VibeCard(
-          entry: todaysMood, dailyAverage: dailyAverage, onCheckIn: onCheckIn),
+      child: _VibeCard(provider: provider, onCheckIn: onCheckIn),
     );
   }
 }
 
+/// Builds the contextual insight line based on user mood data state.
+({String line, String subline, String? accentWord}) _buildResonanceInsight(MoodProvider provider) {
+  final entries = provider.entries;
+  final todaysMoods = provider.todaysMoods;
+  final streak = provider.currentStreak;
+  final totalEntries = entries.length;
+
+  // Condition 1: zero total entries
+  if (totalEntries == 0) {
+    return (
+      line: 'A quiet place to notice yourself. Start when you\'re ready.',
+      subline: 'YOUR FIRST CHECK-IN',
+      accentWord: null,
+    );
+  }
+
+  // Condition 2: 1-2 total entries, same day
+  if (totalEntries <= 2 && todaysMoods.length == totalEntries) {
+    final n = totalEntries;
+    final times = n == 1 ? 'time' : 'times';
+    return (
+      line: 'You\'ve checked in $n $times today. Keep the thread going.',
+      subline: 'DAY 1',
+      accentWord: null,
+    );
+  }
+
+  // For streak >= 3 conditions, compute averages
+  if (streak >= 3) {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final fourteenDaysAgo = now.subtract(const Duration(days: 14));
+
+    final last7 = entries.where((e) => e.createdAt.isAfter(sevenDaysAgo)).toList();
+    final prior7 = entries.where((e) =>
+        e.createdAt.isAfter(fourteenDaysAgo) &&
+        e.createdAt.isBefore(sevenDaysAgo)).toList();
+
+    final avg7 = last7.isNotEmpty
+        ? last7.fold<int>(0, (s, e) => s + e.moodScore) / last7.length
+        : 0.0;
+    final avgPrior = prior7.isNotEmpty
+        ? prior7.fold<int>(0, (s, e) => s + e.moodScore) / prior7.length
+        : 0.0;
+
+    final hour = now.hour;
+    final timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+    // Condition 3: avg >= 7 (steady)
+    if (avg7 >= 7 && avg7 < 8) {
+      return (
+        line: 'Your ${timeOfDay}s have felt steadier this week.',
+        subline: '$streak DAYS OF PATTERNS',
+        accentWord: 'steadier',
+      );
+    }
+
+    // Condition 4: avg dropped >= 1.5 vs prior week
+    if (prior7.isNotEmpty && (avgPrior - avg7) >= 1.5) {
+      return (
+        line: 'Some days weigh more. You showed up anyway.',
+        subline: '$streak DAY STREAK',
+        accentWord: null,
+      );
+    }
+
+    // Condition 5: avg >= 8 consistently
+    if (avg7 >= 8) {
+      return (
+        line: 'You\'ve been arriving bright lately.',
+        subline: '$streak DAYS OF LIGHT',
+        accentWord: 'bright',
+      );
+    }
+
+    // Condition 6: middle range 5-7
+    if (avg7 >= 5 && avg7 < 7) {
+      return (
+        line: 'You\'ve been holding steady.',
+        subline: '$streak DAYS OF PATTERNS',
+        accentWord: 'steady',
+      );
+    }
+  }
+
+  // Default fallback
+  return (
+    line: 'How are you landing today?',
+    subline: 'CURRENT RESONANCE',
+    accentWord: 'landing',
+  );
+}
+
 class _VibeCard extends StatelessWidget {
-  final MoodEntry? entry;
-  final double dailyAverage;
+  final MoodProvider provider;
   final VoidCallback onCheckIn;
-  const _VibeCard(
-      {required this.entry,
-      required this.dailyAverage,
-      required this.onCheckIn});
+  const _VibeCard({required this.provider, required this.onCheckIn});
 
   @override
   Widget build(BuildContext context) {
-    final moodColor = entry != null
-        ? AppTheme.moodColorForScore(entry!.moodScore)
-        : AppTheme.secondaryContainer;
-    final label = entry != null
-        ? (AppConstants.moodLabels[entry!.moodScore] ?? '')
-        : 'Not logged';
-    final score = entry?.moodScore;
-    final avgText = dailyAverage > 0
-        ? 'Avg: ${dailyAverage.toStringAsFixed(2)}/10'
-        : null;
+    final colors = context.watch<ThemeProvider>().colors;
+    final insight = _buildResonanceInsight(provider);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
@@ -239,14 +307,12 @@ class _VibeCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Forest background image
           Positioned.fill(
             child: Image.asset(
               'assets/images/forest.png',
               fit: BoxFit.cover,
             ),
           ),
-          // Mood-tinted + dark gradient overlay
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -254,7 +320,7 @@ class _VibeCard extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    moodColor.withValues(alpha: 0.25),
+                    colors.accent.withValues(alpha: 0.15),
                     AppTheme.background.withValues(alpha: 0.88),
                   ],
                   stops: const [0.0, 0.65],
@@ -279,49 +345,44 @@ class _VibeCard extends StatelessWidget {
                     children: [
                       Container(
                         width: 6, height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.primary, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: colors.accent, shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 6),
                       Text('CURRENT RESONANCE',
-                          style: AppTheme.labelCaps.copyWith(color: AppTheme.primary)),
+                          style: AppTheme.labelCaps.copyWith(color: colors.accent)),
                     ],
                   ),
                 ),
                 const Spacer(),
-                // Score
-                if (score != null)
-                  Text('$score', style: AppTheme.displaySerif.copyWith(
-                      fontSize: 64, color: AppTheme.primary, height: 1)),
-                Text(
-                  score != null ? '$label · $score/10' : 'Tap to check in',
-                  style: AppTheme.headlineSerifMedium.copyWith(
-                      color: AppTheme.textPrimary, fontSize: 18),
+                // Contextual one-liner
+                _InsightLine(
+                  line: insight.line,
+                  accentWord: insight.accentWord,
+                  accentColor: colors.accent,
                 ),
-                if (avgText != null) ...[
-                  const SizedBox(height: 4),
-                  Text(avgText,
-                      style: AppTheme.bodySmall.copyWith(
-                          color: AppTheme.primary)),
-                ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text(insight.subline,
+                    style: AppTheme.labelCaps.copyWith(
+                        color: AppTheme.textSecondary, fontSize: 10)),
+                const SizedBox(height: 20),
                 // Check in button
                 GestureDetector(
                   onTap: onCheckIn,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [Color(0xFFe9c176), Color(0xFFc5a059)]),
+                      gradient: LinearGradient(
+                          colors: [colors.accentSoft, colors.accent]),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.edit_note, color: Color(0xFF412d00), size: 18),
+                        Icon(Icons.edit_note, color: AppTheme.onPrimary, size: 18),
                         const SizedBox(width: 6),
                         Text('Check In',
-                            style: AppTheme.labelMedium.copyWith(color: const Color(0xFF412d00))),
+                            style: AppTheme.labelMedium.copyWith(color: AppTheme.onPrimary)),
                       ],
                     ),
                   ),
@@ -331,8 +392,48 @@ class _VibeCard extends StatelessWidget {
           ),
         ],
       ),
-      ), // Container
-    );   // ClipRRect
+      ),
+    );
+  }
+}
+
+/// Renders the insight line with an optional accent-colored italic word.
+class _InsightLine extends StatelessWidget {
+  final String line;
+  final String? accentWord;
+  final Color accentColor;
+
+  const _InsightLine({
+    required this.line,
+    this.accentWord,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (accentWord == null || !line.contains(accentWord!)) {
+      return Text(
+        line,
+        style: AppTheme.headlineSerifItalic.copyWith(
+            fontSize: 22, color: AppTheme.textPrimary),
+      );
+    }
+
+    final parts = line.split(accentWord!);
+    return RichText(
+      text: TextSpan(
+        style: AppTheme.headlineSerifItalic.copyWith(
+            fontSize: 22, color: AppTheme.textPrimary),
+        children: [
+          TextSpan(text: parts[0]),
+          TextSpan(
+            text: accentWord,
+            style: TextStyle(color: accentColor),
+          ),
+          if (parts.length > 1) TextSpan(text: parts[1]),
+        ],
+      ),
+    );
   }
 }
 
@@ -345,136 +446,354 @@ const List<String> _moodImages = [
   'assets/images/lake.png',
 ];
 
-String _randomMoodImage() => _moodImages[Random().nextInt(_moodImages.length)];
+String _moodImageForIndex(int index) => _moodImages[index % _moodImages.length];
 
 class _TodaysMoodGrid extends StatelessWidget {
   final List<MoodEntry> entries;
   const _TodaysMoodGrid({required this.entries});
 
+  void _goToMoodEntry(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.moodEntry).then((_) async {
+      if (context.mounted) {
+        await context.read<MoodProvider>().loadEntries();
+        context.read<InsightsProvider>().calculateInsights();
+      }
+    });
+  }
+
+  void _showMoodDetail(BuildContext context, MoodEntry entry) {
+    final colors = context.read<ThemeProvider>().colors;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              entry.emotionTags.isNotEmpty
+                  ? entry.emotionTags.first[0].toUpperCase() + entry.emotionTags.first.substring(1)
+                  : (AppConstants.moodLabels[entry.moodScore] ?? ''),
+              style: AppTheme.headlineSerifMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${DateFormat('h:mm a').format(entry.createdAt)} · Score: ${entry.moodScore}/10',
+              style: AppTheme.bodySmall,
+            ),
+            if (entry.notes.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(entry.notes, style: AppTheme.bodyMedium),
+            ],
+            if (entry.emotionTags.length > 1) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: entry.emotionTags.map((tag) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colors.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(tag[0].toUpperCase() + tag.substring(1),
+                      style: AppTheme.bodySmall.copyWith(color: colors.accent)),
+                )).toList(),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      Navigator.pop(_);
+                      if (context.mounted) {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: AppTheme.surfaceContainerLow,
+                            title: Text('Delete this entry?', style: AppTheme.headlineSerifMedium),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text('Cancel', style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text('Delete', style: AppTheme.bodyMedium.copyWith(color: const Color(0xFFE74C3C))),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true && context.mounted) {
+                          await context.read<MoodProvider>().deleteEntry(entry.id);
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE74C3C).withValues(alpha: 0.4)),
+                      ),
+                      child: Center(
+                        child: Text('Delete',
+                            style: AppTheme.labelMedium.copyWith(color: const Color(0xFFE74C3C))),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+    // +1 for the "Add mood" card at the end
+    final itemCount = entries.length + 1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Today's Moods",
-            style: AppTheme.headlineSerif.copyWith(fontSize: 24)),
+        // Header with count
+        Row(
+          children: [
+            Text("Today's Moods",
+                style: AppTheme.headlineSerif.copyWith(fontSize: 24)),
+            if (entries.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Text('(${entries.length})',
+                  style: AppTheme.bodyMedium.copyWith(
+                      color: colors.accentSoft, fontSize: 14)),
+            ],
+          ],
+        ),
         const SizedBox(height: 16),
-        if (entries.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                const Icon(Icons.auto_awesome_outlined,
-                    color: AppTheme.primary, size: 32),
-                const SizedBox(height: 12),
-                Text("No moods logged today — start your first check-in!",
-                    textAlign: TextAlign.center,
-                    style: AppTheme.bodyMedium
-                        .copyWith(color: AppTheme.textSecondary)),
-              ],
-            ),
-          )
-        else
-          SizedBox(
-            height: 180,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: entries.length,
-              itemBuilder: (context, index) {
-                final e = entries[index];
-                return _MoodHorizontalCard(
-                  image: _randomMoodImage(),
-                  moodName: e.emotionTags.isNotEmpty
-                      ? e.emotionTags.first
-                      : (AppConstants.moodLabels[e.moodScore] ?? ''),
-                  description: e.notes,
-                  score: e.moodScore,
-                );
-              },
-            ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.8,
           ),
+          itemCount: itemCount,
+          itemBuilder: (context, i) {
+            // Last item is the "Add mood" card
+            if (i == entries.length) {
+              return _AddMoodCard(onTap: () => _goToMoodEntry(context));
+            }
+            final e = entries[i];
+            return _MoodGridCard(
+              entry: e,
+              image: _moodImageForIndex(i),
+              onTap: () => _showMoodDetail(context, e),
+            );
+          },
+        ),
       ],
     );
   }
 }
 
-class _MoodHorizontalCard extends StatelessWidget {
+class _MoodGridCard extends StatelessWidget {
+  final MoodEntry entry;
   final String image;
-  final String moodName;
-  final String description;
-  final int score;
+  final VoidCallback onTap;
 
-  const _MoodHorizontalCard({
+  const _MoodGridCard({
+    required this.entry,
     required this.image,
-    required this.moodName,
-    required this.description,
-    required this.score,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: AppTheme.outlineVariant.withValues(alpha: 0.25), width: 0.5),
-      ),
-      child: Column(
-        children: [
-          // Image — top
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
+    final colors = context.watch<ThemeProvider>().colors;
+    final moodName = entry.emotionTags.isNotEmpty
+        ? entry.emotionTags.first
+        : (AppConstants.moodLabels[entry.moodScore] ?? '');
+    // Capitalize
+    final displayName = moodName.isNotEmpty
+        ? moodName[0].toUpperCase() + moodName.substring(1)
+        : '';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.line, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-            child: SizedBox(
-              width: 140,
-              height: 104,
-              child: Image.asset(
-                image,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: AppTheme.moodColorForScore(score).withValues(alpha: 0.6),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Full-card background image
+              Positioned.fill(
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.15),
+                    BlendMode.darken,
+                  ),
+                  child: Image.asset(image, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: AppTheme.moodColorForScore(entry.moodScore).withValues(alpha: 0.6),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Text — bottom
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    moodName,
-                    style: AppTheme.labelMedium.copyWith(
-                        color: AppTheme.textPrimary, fontSize: 11),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              // Bottom gradient scrim
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.5),
+                        Colors.black.withValues(alpha: 0.9),
+                      ],
+                      stops: const [0, 0.4, 0.7, 1.0],
+                    ),
                   ),
-                  if (description.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                ),
+              ),
+              // Time pill top-right
+              Positioned(
+                top: 8, right: 8,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      DateFormat('h:mm a').format(entry.createdAt),
+                      style: const TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 0.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Text content bottom
+              Positioned(
+                left: 10, right: 10, bottom: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      description,
-                      style: AppTheme.bodySmall.copyWith(fontSize: 9),
-                      maxLines: 2,
+                      displayName,
+                      style: AppTheme.headlineSerifMedium.copyWith(
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (entry.notes.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        entry.notes,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.75),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddMoodCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddMoodCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.watch<ThemeProvider>().colors;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withValues(alpha: 0.02),
+          border: Border.all(color: colors.line, width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colors.accent.withValues(alpha: 0.12),
+              ),
+              child: Icon(Icons.add, color: colors.accent, size: 20),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'ADD MOOD',
+              style: TextStyle(
+                fontSize: 9,
+                letterSpacing: 1.5,
+                color: colors.accentSoft,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

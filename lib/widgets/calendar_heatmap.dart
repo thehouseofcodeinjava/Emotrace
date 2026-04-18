@@ -1,13 +1,16 @@
-// Widget: CalendarHeatmap — 90-day mood color grid with month navigation | Author: Piyush Puri | Date: 11 Apr 2026
+// Widget: CalendarHeatmap — mood color grid with month navigation
+// Author: Piyush Puri | Date: 11 Apr 2026
 // Sanctuary redesign: Piyush Puri | Date: 15 Apr 2026
-// Square cells, 5-band Sanctuary color scale, note dots, gold today ring
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../config/constants.dart';
 import '../config/theme.dart';
 import '../models/mood_entry_model.dart';
+import '../theme/accent_theme.dart';
+import '../theme/theme_provider.dart';
 import '../utils/date_utils.dart';
 
 class CalendarHeatmap extends StatefulWidget {
@@ -22,7 +25,6 @@ class CalendarHeatmap extends StatefulWidget {
 class _CalendarHeatmapState extends State<CalendarHeatmap> {
   late DateTime _displayedMonth;
 
-  // Map<"yyyy-MM-dd", List<MoodEntry>> for O(1) lookup — multiple entries per day
   Map<String, List<MoodEntry>> _entryMap = {};
 
   @override
@@ -53,12 +55,13 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     return sum / entries.length;
   }
 
-  Color _heatmapColor(double avg) {
-    if (avg >= 9) return const Color(0xFFFFF8DC); // Cream — excellent
-    if (avg >= 7) return const Color(0xFFFFD700); // Bright gold — good
-    if (avg >= 5) return const Color(0xFF4E7A5F); // Forest green — neutral/moderate
-    if (avg >= 3) return const Color(0xFF8B4545); // Dark crimson — low
-    return const Color(0xFF5D2E2E);                // Very dark red — critical low
+  /// Derive heatmap color at render time from current accent + average score.
+  Color _heatmapColor(double avg, AccentColors accent) {
+    if (avg >= 9) return accent.accent.withValues(alpha: 1.0);
+    if (avg >= 7) return accent.accent.withValues(alpha: 0.75);
+    if (avg >= 5) return accent.accent.withValues(alpha: 0.5);
+    if (avg >= 3) return accent.accent.withValues(alpha: 0.3);
+    return accent.accent.withValues(alpha: 0.15);
   }
 
   String _dayKey(DateTime dt) =>
@@ -116,17 +119,17 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
   Widget build(BuildContext context) {
     final weeks = _buildWeeks();
     final monthLabel = DateFormat('MMMM yyyy').format(_displayedMonth);
+    final accent = context.watch<ThemeProvider>().colors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Month navigation header ─────────────────────────────────────────
         Row(
           children: [
             IconButton(
               onPressed: _canGoPrev ? _prevMonth : null,
               icon: const Icon(Icons.chevron_left),
-              color: _canGoPrev ? AppTheme.primary : AppTheme.textSecondary,
+              color: _canGoPrev ? accent.accent : AppTheme.textSecondary,
               iconSize: 22,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -140,7 +143,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
             IconButton(
               onPressed: _canGoNext ? _nextMonth : null,
               icon: const Icon(Icons.chevron_right),
-              color: _canGoNext ? AppTheme.primary : AppTheme.textSecondary,
+              color: _canGoNext ? accent.accent : AppTheme.textSecondary,
               iconSize: 22,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -148,8 +151,6 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           ],
         ),
         const SizedBox(height: 12),
-
-        // ── Weekday labels ──────────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) {
@@ -169,24 +170,16 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           }).toList(),
         ),
         const SizedBox(height: 6),
-
-        // ── Heatmap grid ────────────────────────────────────────────────────
         ...weeks.map((week) => Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: week.map((day) => _buildCell(day)).toList(),
+                children: week.map((day) => _buildCell(day, accent)).toList(),
               ),
             )),
-
         const SizedBox(height: 16),
-
-        // ── Legend ──────────────────────────────────────────────────────────
-        _buildLegend(),
-
+        _buildLegend(accent),
         const SizedBox(height: 12),
-
-        // ── Total entries count ─────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -196,8 +189,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.storage_rounded,
-                  size: 14, color: AppTheme.primary),
+              Icon(Icons.storage_rounded, size: 14, color: accent.accent),
               const SizedBox(width: 6),
               Text(
                 'Total entries: ${widget.entries.length}',
@@ -213,7 +205,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     );
   }
 
-  Widget _buildCell(DateTime? day) {
+  Widget _buildCell(DateTime? day, AccentColors accent) {
     if (day == null) {
       return const SizedBox(width: 32, height: 32);
     }
@@ -225,9 +217,8 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
 
     final avg = hasEntry ? _dayAverage(dayEntries!) : 0.0;
     final cellColor = hasEntry
-        ? _heatmapColor(avg)
+        ? _heatmapColor(avg, accent)
         : AppTheme.surfaceContainerHighest;
-    // Use most-recent entry for detail sheet
     final topEntry = hasEntry ? dayEntries!.first : null;
     final hasNotes = hasEntry && dayEntries!.any((e) => e.notes.isNotEmpty);
 
@@ -244,7 +235,7 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                 : AppTheme.surfaceContainerHighest.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(6),
             border: isToday
-                ? Border.all(color: AppTheme.primary, width: 1.5)
+                ? Border.all(color: accent.accent, width: 1.5)
                 : !hasEntry
                     ? Border.all(
                         color: AppTheme.outlineVariant.withValues(alpha: 0.2),
@@ -267,7 +258,6 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                   ),
                 ),
               ),
-              // Note dot
               if (hasNotes)
                 Positioned(
                   bottom: 3, left: 0, right: 0,
@@ -287,7 +277,8 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
   }
 
   void _showEntryDetails(BuildContext context, MoodEntry entry) {
-    final emoji = AppConstants.moodEmojis[entry.moodScore.clamp(1, 10)] ?? '🙂';
+    final accent = context.read<ThemeProvider>().colors;
+    final emoji = AppConstants.moodEmojis[entry.moodScore.clamp(1, 10)] ?? '';
     final dateLabel = DateFormat('EEEE, d MMMM yyyy').format(entry.createdAt);
     final timeLabel = DateFormat('HH:mm').format(entry.createdAt);
     final moodColor = AppTheme.moodColorForScore(entry.moodScore);
@@ -305,7 +296,6 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
             Center(
               child: Container(
                 width: 40, height: 4,
@@ -316,14 +306,10 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Date + time
             Text(dateLabel, style: AppTheme.bodySmall),
             const SizedBox(height: 4),
             Text(timeLabel, style: AppTheme.bodySmall),
             const SizedBox(height: 16),
-
-            // Emoji + score
             Row(
               children: [
                 Text(emoji, style: const TextStyle(fontSize: 40)),
@@ -344,8 +330,6 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Emotions
             if (entry.emotionTags.isNotEmpty) ...[
               Text('Emotions', style: AppTheme.labelCaps),
               const SizedBox(height: 8),
@@ -357,20 +341,18 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary.withValues(alpha: 0.15),
+                            color: accent.accent.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                                color: AppTheme.primary.withValues(alpha: 0.3)),
+                                color: accent.accent.withValues(alpha: 0.3)),
                           ),
                           child: Text(tag, style: AppTheme.bodySmall.copyWith(
-                              color: AppTheme.primary)),
+                              color: accent.accent)),
                         ))
                     .toList(),
               ),
               const SizedBox(height: 16),
             ],
-
-            // Notes
             if (entry.notes.isNotEmpty) ...[
               Text('Notes', style: AppTheme.labelCaps),
               const SizedBox(height: 6),
@@ -382,13 +364,13 @@ class _CalendarHeatmapState extends State<CalendarHeatmap> {
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(AccentColors accent) {
     final items = [
-      ('1–2', const Color(0xFF5D2E2E)),
-      ('3–4', const Color(0xFF8B4545)),
-      ('5–6', const Color(0xFF4E7A5F)),
-      ('7–8', const Color(0xFFFFD700)),
-      ('9–10', const Color(0xFFFFF8DC)),
+      ('Low', accent.accent.withValues(alpha: 0.15)),
+      ('Off', accent.accent.withValues(alpha: 0.3)),
+      ('Steady', accent.accent.withValues(alpha: 0.5)),
+      ('Bright', accent.accent.withValues(alpha: 0.75)),
+      ('Radiant', accent.accent.withValues(alpha: 1.0)),
     ];
     return Wrap(
       spacing: 12,
